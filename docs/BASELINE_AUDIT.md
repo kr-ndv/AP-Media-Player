@@ -123,3 +123,14 @@ Before product implementation starts:
 6. A baseline build/screenshots from a known commit are available for later comparison.
 
 No runtime playback fix is claimed by this audit.
+
+
+## 9. Official platform/dependency checks at audit time
+
+Checked on 2026-10-22 against official Android Developers pages:
+
+- Compose Material 3 lists **1.4.0 as the stable release** and **1.5.0-beta02 as the beta line** as of the latest update observed on 2026-10-21. The project currently pins Material 3 1.4.0, so the visual redesign should stay on this stable version unless a specific required API is absent and the trade-off is reviewed. Source: https://developer.android.com/jetpack/androidx/releases/compose-material3
+- The same official release notes say the Material Icons library is no longer recommended for new use and is no longer updated; they recommend Material Symbols Vector Drawable XMLs instead. The current project depends on `material-icons-extended`. Audit actual icon call sites and APK/build impact, then migrate only through a deliberate PR with an icon inventory—do not mix a whole icon migration into an unrelated screen change. Source: https://developer.android.com/jetpack/androidx/releases/compose-material3 and https://developer.android.com/develop/ui/compose/graphics/images/material
+- Android 16 (API 36) targeting apps cannot opt out of edge-to-edge, and large-screen orientation/aspect-ratio restrictions are ignored by default at smallest width >=600dp. The app already calls `enableEdgeToEdge()`; UI work must validate system-bar insets, resizing and landscape/wide-window layouts instead of forcing orientation. Sources: https://developer.android.com/about/versions/16/behavior-changes-16 and https://developer.android.com/design/ui/mobile/guides/layout-and-content/edge-to-edge
+
+These checks inform planning only. No dependency versions or runtime code were changed by the audit.

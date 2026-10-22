@@ -62,6 +62,8 @@ The current manifest declares:
 - `READ_MEDIA_VIDEO`
 - `READ_EXTERNAL_STORAGE` capped at API 32.
 
+It does not declare `READ_MEDIA_VISUAL_USER_SELECTED`. Official Android guidance says Android 14+ users can grant selected-photo/video access, and apps that maintain their own media library should account for this permission and reselection path. Because this app targets SDK 36 and queries MediaStore video rows, the video permission contract must distinguish full video access, selected-video access, denied access and access that was later changed in Settings. Recheck permissions on resume; do not interpret selected-only access as an empty library. This selected-visual-media permission is not an audio permission. Source: https://developer.android.com/about/versions/14/changes/partial-photo-video-access
+
 The current player UI includes a direct stream URL field and `open stream` action, and resources describe network shares and UPnP/DLNA as planned. The stated product intent for the first release is now **local media only**. The next implementation should remove the network-stream experience and unused network placeholders, confirm no required local-media path needs Internet permission, and remove `INTERNET` if confirmed unnecessary. Do not silently replace this with network shares or an online feed.
 
 Media access should be requested contextually; the UI must explain denied or partially granted access and offer the system file picker as a user-controlled fallback.
@@ -134,3 +136,15 @@ Checked on 2026-10-22 against official Android Developers pages:
 - Android 16 (API 36) targeting apps cannot opt out of edge-to-edge, and large-screen orientation/aspect-ratio restrictions are ignored by default at smallest width >=600dp. The app already calls `enableEdgeToEdge()`; UI work must validate system-bar insets, resizing and landscape/wide-window layouts instead of forcing orientation. Sources: https://developer.android.com/about/versions/16/behavior-changes-16 and https://developer.android.com/design/ui/mobile/guides/layout-and-content/edge-to-edge
 
 These checks inform planning only. No dependency versions or runtime code were changed by the audit.
+
+
+## 10. Additional permission acceptance requirement
+
+For the local-media MVP, test the following on Android 14+ and a current Android release:
+- Full `READ_MEDIA_VIDEO` permission granted.
+- User grants only selected-video access via `READ_MEDIA_VISUAL_USER_SELECTED`.
+- User changes or revokes selected-video access in system Settings while the app is backgrounded.
+- App returns to foreground, re-queries MediaStore, and reflects the actual selected set without treating it as a truly empty library.
+- A user-initiated action clearly offers video access/reselection; the app does not unexpectedly re-prompt on startup.
+
+Official source: https://developer.android.com/about/versions/14/changes/partial-photo-video-access

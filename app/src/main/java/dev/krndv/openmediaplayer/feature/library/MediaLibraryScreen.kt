@@ -34,9 +34,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.krndv.openmediaplayer.R
 import dev.krndv.openmediaplayer.core.design.tokens.FamilySpacing
+import dev.krndv.openmediaplayer.core.playback.LibVlcPlaybackEngine
+import dev.krndv.openmediaplayer.feature.player.PlaybackScreen
 
 private enum class PlayerDestination(val labelRes: Int, val symbol: String) {
     Library(R.string.nav_library, "▦"),
+    Player(R.string.nav_player, "▶"),
     Network(R.string.nav_network, "⇄"),
     Playlists(R.string.nav_playlists, "≡"),
     Settings(R.string.nav_settings, "⚙"),
@@ -44,7 +47,7 @@ private enum class PlayerDestination(val labelRes: Int, val symbol: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MediaLibraryScreen() {
+fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     var selectedDestination by rememberSaveable { mutableIntStateOf(0) }
     val destination = PlayerDestination.entries[selectedDestination]
     val colors = MaterialTheme.colorScheme
@@ -98,6 +101,7 @@ fun MediaLibraryScreen() {
         ) {
             when (destination) {
                 PlayerDestination.Library -> LibraryLanding()
+                PlayerDestination.Player -> PlaybackScreen(engine)
                 PlayerDestination.Network -> NetworkLanding()
                 PlayerDestination.Playlists -> EmptyDestination(
                     title = stringResource(R.string.playlists_empty_title),

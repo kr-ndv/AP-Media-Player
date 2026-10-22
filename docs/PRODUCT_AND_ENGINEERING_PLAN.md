@@ -11,6 +11,7 @@ Build a polished, privacy-respecting Android app for playing media stored on the
 - [Baseline audit](BASELINE_AUDIT.md) — current stack, CI and test gaps, library/player risks, and observed screenshot mismatch.
 - [Screen-by-screen design specification](DESIGN_SPEC.md) — navigation, individual screen contracts, states, adaptive behavior, reference findings, accessibility and acceptance gates.
 - [Playback engine ADR](architecture/adr-001-playback-engine.md) — engine choice, local-only scope, and licensing decision gate.
+- [Licensing and third-party distribution audit](LICENSING_AUDIT.md) — app license decision, LibVLC AAR/codec inventory, notices and release blockers.
 - [Existing design-system principles](design-system/principles.md), [tokens](design-system/tokens.md), [component conventions](design-system/components.md), and [accessibility baseline](design-system/accessibility.md).
 
 

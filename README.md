@@ -2,7 +2,7 @@
 
 An Android media player prototype built with Kotlin, Jetpack Compose and Material 3, with a privacy-respecting, local-first product direction.
 
-**Current stage:** a working player-screen prototype with a LibVLC adapter and event-driven UI state. Native playback has not yet been validated on a device, and the app is not ready for daily use.
+**Current stage:** local MediaStore discovery and a LibVLC playback path are implemented, but playback still needs validation on real Android devices and the app is not ready for daily use.
 
 ## Product direction
 
@@ -17,12 +17,13 @@ An Android media player prototype built with Kotlin, Jetpack Compose and Materia
 ## Current implementation
 
 - Material 3 design foundation and theme showcase components.
-- Library, Player, Network, Playlists and Settings navigation.
-- Player screen with a native video surface, Android document picker for local audio/video, and a direct-stream URL field.
-- LibVLC event reporting for opening, playing, paused, stopped, ended and playback-error states; the UI no longer assumes an open request means playback succeeded.
-- Android CI builds the debug app, compiles the instrumentation-test APK, runs unit tests and runs lint.
+- A local library that requests Android's audio/video permissions, reads indexed media from MediaStore on launch, and supports rescan, title/artist/album search, and separate Music and Videos views.
+- A Material 3-based home screen with expressive container surfaces, icon navigation, media counts and tappable media rows.
+- Player screen with a LibVLC video surface, Android document picker for local audio/video, and a direct-stream URL field.
+- Library selection opens the player after the LibVLC output surface is attached, and the engine reports opening, playing, paused, stopped, ended and playback-error states.
+- Android CI builds the debug app, compiles the instrumentation-test APK, runs unit tests and runs lint. Successful push builds upload a debug APK artifact for 14 days.
 
-The media-library index, queues, background playback, audio focus, seeking and subtitle selection are not implemented yet. The player remains a prototype: a successful build does not prove that local files or network streams play on a real device. Format support depends on the stream, bundled native components and device.
+MediaStore discovery is limited to media Android has indexed and to the audio/video collections for which the user grants permission; this is not an unrestricted filesystem crawler. Queues, background playback, audio focus, seeking and subtitle selection are not fully implemented yet. A successful build does not prove that local files or network streams play on a real device. Format support depends on the stream, bundled native components and device.
 
 ## Documentation
 

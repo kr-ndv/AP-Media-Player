@@ -1,21 +1,20 @@
 package dev.krndv.openmediaplayer.core.playback
 
-import android.content.ContentResolver
-import android.net.Uri
-
 /**
- * LibVLC consumes local file descriptors through an fd:// MRL rather than using Android's
- * ContentResolver itself. The engine must keep the corresponding descriptor open.
+ * Maps source locations to the MRL passed to LibVLC.
+ *
+ * Android content-provider URIs must first be opened with ContentResolver and represented by
+ * a retained file descriptor. Keeping this mapper in plain Kotlin makes the policy testable
+ * by the local JVM test runner without requiring a framework runtime.
  */
 internal object LibVlcMediaUriMapper {
-    fun toMediaUri(uri: Uri, fileDescriptorId: Int?): Uri {
-        if (!uri.scheme.equals(ContentResolver.SCHEME_CONTENT, ignoreCase = true)) {
-            return uri
-        }
+    fun toMediaLocation(source: String, fileDescriptorId: Int?): String {
+        val scheme = source.substringBefore(':', missingDelimiterValue = "")
+        if (!scheme.equals("content", ignoreCase = true)) return source
 
         val descriptorId = requireNotNull(fileDescriptorId) {
             "A content URI must be opened through ContentResolver before passing it to LibVLC."
         }
-        return Uri.parse("fd://$descriptorId")
+        return "fd://$descriptorId"
     }
 }

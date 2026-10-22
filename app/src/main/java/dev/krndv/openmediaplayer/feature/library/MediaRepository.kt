@@ -104,7 +104,7 @@ class MediaRepository(context: Context) {
     private inline fun queryCollection(
         collection: Uri,
         columns: Array<String>,
-        crossinline mapRow: android.database.Cursor.(Long) -> LocalMediaItem,
+        crossinline mapRow: (android.database.Cursor, Long) -> LocalMediaItem,
     ): List<LocalMediaItem> = runCatching {
         val results = mutableListOf<LocalMediaItem>()
         resolver.query(
@@ -117,7 +117,7 @@ class MediaRepository(context: Context) {
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                results += cursor.mapRow(id)
+                results += mapRow(cursor, id)
             }
         }
         results

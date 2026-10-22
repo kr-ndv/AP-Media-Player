@@ -5,6 +5,15 @@
 ## Product goal
 Build a polished, privacy-respecting Android app for playing media stored on the device. The first-release product scope is strictly local media: library queries, playback, queue, playback history, and preferences remain on-device. Direct HTTP/RTSP streams, network shares, remote discovery, online catalogs, streaming feeds, tracking, sign-in, and other online services are out of scope. Do not request Internet access for the local-media MVP; any later network feature requires a separate explicit product decision and permission/security review.
 
+
+## Planning artifacts
+
+- [Baseline audit](BASELINE_AUDIT.md) — current stack, CI and test gaps, library/player risks, and observed screenshot mismatch.
+- [Screen-by-screen design specification](DESIGN_SPEC.md) — navigation, individual screen contracts, states, adaptive behavior, reference findings, accessibility and acceptance gates.
+- [Playback engine ADR](architecture/adr-001-playback-engine.md) — engine choice, local-only scope, and licensing decision gate.
+- [Existing design-system principles](design-system/principles.md), [tokens](design-system/tokens.md), [component conventions](design-system/components.md), and [accessibility baseline](design-system/accessibility.md).
+
+
 ## Reference review
 Use these repositories for design research and interaction patterns only:
 - PixelPlayer — music library, artwork-led now playing, Material 3 styling: https://github.com/PixelPlayerHQ/PixelPlayer

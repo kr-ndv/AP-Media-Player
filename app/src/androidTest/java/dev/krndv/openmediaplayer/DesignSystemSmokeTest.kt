@@ -2,6 +2,7 @@ package dev.krndv.openmediaplayer
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.junit.Rule
@@ -21,8 +22,16 @@ class MediaLibrarySmokeTest {
 
     @Test
     fun networkDestinationExplainsPlannedSources() {
-        composeRule.onNodeWithText("Network").performClick()
+        composeRule.onAllNodesWithText("Network").onLast().performClick()
         composeRule.onNodeWithText("Play from anywhere.").assertIsDisplayed()
         composeRule.onNodeWithText("Network shares").assertIsDisplayed()
+    }
+
+    @Test
+    fun playerDestinationShowsLocalAndNetworkOptions() {
+        composeRule.onAllNodesWithText("Player").onLast().performClick()
+        composeRule.onNodeWithText("Now playing").assertIsDisplayed()
+        composeRule.onNodeWithText("Choose audio or video").assertIsDisplayed()
+        composeRule.onNodeWithText("Open stream").assertIsDisplayed()
     }
 }

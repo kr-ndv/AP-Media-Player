@@ -673,7 +673,7 @@ private fun canReadAudioMedia(context: Context): Boolean =
         },
     ) == PackageManager.PERMISSION_GRANTED
 
-private fun canReadVideoMedia(context): Boolean =
+private fun canReadVideoMedia(context: Context): Boolean =
     ContextCompat.checkSelfPermission(
         context,
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

@@ -1,6 +1,6 @@
 [versions]
 agp = "9.4.0"
-kotlin = "2.4.21"
+kotlin = "2.4.10"
 composeBom = "2026.09.00"
 material3 = "1.4.0"
 activityCompose = "1.13.0"
@@ -24,5 +24,4 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

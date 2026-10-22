@@ -73,7 +73,7 @@ When audio is active and the full player is closed, show a compact **now-playing
 - Loading: keep the shell and any previously trusted items visible; show a small inline scan indicator.
 - Empty with permission: explain no indexed media was found; offer rescan and “Browse files”.
 - Permission not granted: explain why media access is needed and provide a grant action; do not show an unexplained blank page.
-- Partial access: display the collection that is accessible and explain the other collection needs permission when appropriate.
+- Partial access: display the collection that is accessible and explain the other collection needs permission when appropriate. On Android 14+ specifically, distinguish full video access from selected-video access via `READ_MEDIA_VISUAL_USER_SELECTED`; let the user manage/reselect video access from an explicit action. Do not treat selected-only access as an empty library, and recheck actual permissions on resume.
 - Query/scan error: distinguish it from a genuinely empty library, give a retry action, and avoid silently treating repository exceptions as no media.
 - Search active: clear query, retain relevant context, and display a specific no-results state.
 
@@ -117,7 +117,7 @@ When audio is active and the full player is closed, show a compact **now-playing
 - If a thumbnail fails, show a media-kind placeholder and keep the row playable.
 - Unsupported/corrupt items should produce a useful playback error and allow Back to the list.
 
-**States:** loading, empty, no results, permission denied/partial, thumbnail failure, query error, and playback error.
+**States:** loading, empty, no results, permission denied, selected-video-only access/reselection (Android 14+), thumbnail failure, query error, and playback error.
 
 ## 4.4 Audio player — full-screen route
 
@@ -236,7 +236,7 @@ Start with alignment, whitespace and typography. Use one surface or divider wher
 
 | Flow | Success path | Important failure/edge cases | Test gate |
 |---|---|---|---|
-| First launch | User sees Library; permission asked only when needed | Denied audio/video permission, partial access, permanently denied permission | UI permission tests; no forced dead end |
+| First launch | User sees Library; permission asked only when needed | Denied audio/video permission, selected-video access on Android 14+, access changed in Settings, permanently denied permission | UI permission tests; recheck on resume; no forced dead end |
 | Scan/refresh | Scan indicator, then accurate media list | No files, revoked permission, query error, file disappears | Repository tests distinguish empty from failure; large-library performance test |
 | Search | Results update and query can be cleared | No results, long filename, large font | UI instrumentation / screenshot |
 | Open audio | Audio player opens selected row and begins playback | Invalid URI, old stop event arrives after new item, no artwork | Regression test and device playback evidence |
@@ -276,3 +276,8 @@ Do not merge a phase just because it compiles. Each PR should include its test e
 5. Choose an open-license audio/video fixture set and record sample hashes/licenses, so playback tests are repeatable.
 6. Complete LibVLC binary/codec/plugin license inventory and application licence decision before release.
 
+
+
+## 11. Android selected-video access note
+
+The current target SDK is 36. Android 14 introduced selected photos/videos access. The implementation must request and handle `READ_MEDIA_VISUAL_USER_SELECTED` alongside `READ_MEDIA_VIDEO` where appropriate on Android 14+, and provide a user-initiated reselection/manage-access path. This applies to the video collection, not the audio collection. Verify exact API behavior during implementation against the official page: https://developer.android.com/about/versions/14/changes/partial-photo-video-access

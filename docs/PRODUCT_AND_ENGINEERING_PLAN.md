@@ -3,7 +3,7 @@
 **Status:** Planning baseline; implementation should begin only after the design and playback investigation gates are satisfied.
 
 ## Product goal
-Build a polished, privacy-respecting Android app for playing media stored on the device. The app is local-first: library queries, playback history, queue, and preferences remain on-device. Network access is limited to explicitly requested local-network / URL playback or features added later by deliberate product decision.
+Build a polished, privacy-respecting Android app for playing media stored on the device. The first-release product scope is strictly local media: library queries, playback, queue, playback history, and preferences remain on-device. Direct HTTP/RTSP streams, network shares, remote discovery, online catalogs, streaming feeds, tracking, sign-in, and other online services are out of scope. Do not request Internet access for the local-media MVP; any later network feature requires a separate explicit product decision and permission/security review.
 
 ## Reference review
 Use these repositories for design research and interaction patterns only:
@@ -61,7 +61,7 @@ Keep UI independent of LibVLC through an app-owned engine boundary. First audit 
 - Deliver design spec and acceptance checklist before implementing the redesign.
 
 ### Phase 2 — Playback correctness spike
-- Build reproducible tests with small licensed/royalty-free local sample files: audio and video, common supported formats, malformed/unsupported input, short clip, larger file, content URI and document picker.
+- Build reproducible tests with small licensed/royalty-free local sample files: audio and video, common supported formats, malformed/unsupported input, short clip, larger file, MediaStore content URIs, and system document-picker URIs.
 - Fix event ordering, URI access, player and surface lifecycle, seeking and stop/reopen behavior.
 - Establish truthful capability matrix for formats/containers/codecs based on actual tested combinations.
 - Add unit tests for state transitions and instrumentation tests for user-visible playback controls.
@@ -89,7 +89,7 @@ Keep UI independent of LibVLC through an app-owned engine boundary. First audit 
 
 ### Phase 7 — Settings, privacy and polish
 - Theme/system/dynamic color; library refresh/scan options; user-visible playback settings; privacy/about; reset options where appropriate.
-- Verify permissions are minimal and clearly explained. Do not send analytics or library contents remotely.
+- Verify permissions are minimal and clearly explained. The local-media MVP should not make network requests or require INTERNET permission. Do not send analytics or library contents remotely.
 - Verify open-source/licence obligations for LibVLC and all included assets/dependencies before release.
 - Gate: persistence, accessibility, contrast, font scale, TalkBack labels and privacy review.
 
@@ -104,9 +104,9 @@ Keep UI independent of LibVLC through an app-owned engine boundary. First audit 
 1. Unit: player-state transition reducer/session IDs; metadata formatting; sorting/search; preferences serialization.
 2. Repository: no permissions, audio-only permission, video-only permission, both, revoked permission, empty MediaStore, disappearing file, malformed metadata and query error.
 3. UI instrumentation: navigation destinations, search/filter, opening audio/video, back from player, mini-player visibility, settings persistence, permission rationale/retry, empty/error states.
-4. Playback instrumentation/emulator: bundled open-license audio/video samples; start, pause/resume, stop, seek, end event, reopen next file rapidly, rotate during video, go background/foreground for audio, invalid codec/URI error behavior.
+4. Playback instrumentation/emulator: bundled open-license local audio/video samples; start, pause/resume, stop, seek, end event, reopen next file rapidly, rotate during video, go background/foreground for audio, invalid codec/URI error behavior.
 5. Manual physical device: actual codecs/devices, decoder failures, audio focus/headphones, display cutouts, battery/resource behavior, real video surface and full-screen behavior.
-6. Release validation: fresh install/update install, APK signature/install, app starts offline, permissions align with user actions, no unexpected networking, and CI artifacts match commit.
+6. Release validation: fresh install/update install, APK signature/install, app starts and plays local files offline, permissions align with user actions, no networking or Internet permission in the MVP, and CI artifacts match the commit.
 
 ## Delivery workflow
 - Feature branch per milestone; small pull requests with scope and test results.

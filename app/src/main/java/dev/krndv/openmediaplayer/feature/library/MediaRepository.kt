@@ -41,7 +41,6 @@ class MediaRepository(context: Context) {
 
     private fun queryAudio(): List<LocalMediaItem> = queryCollection(
         collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-        kind = MediaKind.AUDIO,
         columns = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
@@ -75,7 +74,6 @@ class MediaRepository(context: Context) {
 
     private fun queryVideo(): List<LocalMediaItem> = queryCollection(
         collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-        kind = MediaKind.VIDEO,
         columns = arrayOf(
             MediaStore.Video.Media._ID,
             MediaStore.Video.Media.TITLE,
@@ -105,7 +103,6 @@ class MediaRepository(context: Context) {
 
     private inline fun queryCollection(
         collection: Uri,
-        kind: MediaKind,
         columns: Array<String>,
         crossinline mapRow: android.database.Cursor.(Long) -> LocalMediaItem,
     ): List<LocalMediaItem> = runCatching {

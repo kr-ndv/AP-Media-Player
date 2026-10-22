@@ -6,7 +6,7 @@
     <string name="design_system_headline">Expressive by design</string>
     <string name="design_system_intro">A shared visual language for a family of thoughtful, privacy-respecting Android apps.</string>
     <string name="shared_foundation_title">Shared family foundation</string>
-    <string name="shared_foundation_description">Consistent color, shape, typography, spacing and accessible interaction patterns—adapted to each app's purpose.</string>
+    <string name="shared_foundation_description">Consistent color, shape, typography, spacing and accessible interaction patterns, adapted to the purpose of each app.</string>
     <string name="preview_dialog_button">Preview dialog</string>
     <string name="color_roles_title">Color roles</string>
     <string name="color_primary">Primary</string>

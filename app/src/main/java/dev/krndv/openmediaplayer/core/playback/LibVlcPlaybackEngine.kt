@@ -116,7 +116,11 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
             mediaPlayer.stop()
 
             candidateDescriptor = openContentDescriptorIfNeeded(uri)
-            val libVlcUri = LibVlcMediaUriMapper.toMediaUri(uri, candidateDescriptor?.fd)
+            val mediaLocation = LibVlcMediaUriMapper.toMediaLocation(
+                uri.toString(),
+                candidateDescriptor?.fd,
+            )
+            val libVlcUri = Uri.parse(mediaLocation)
             Log.d(
                 TAG,
                 "Resolved source: attempt=$attempt originalScheme=${uri.scheme ?: "unknown"} " +

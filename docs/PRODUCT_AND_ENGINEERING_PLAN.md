@@ -25,7 +25,7 @@ Primary bottom destinations:
 3. Videos — local videos with thumbnails where available, list/grid option, sorting and search.
 4. Settings — appearance, library, playback and privacy/about sections. No decorative/inert settings.
 
-Playback is a full-screen route/surface, not a permanent navigation destination. Tapping a media item opens it in the correct player. Browsing while audio plays exposes a compact now-playing bar that reopens the music player. Video playback gets an immersive surface with orientation-aware fullscreen behavior. File picker is a fallback to MediaStore browsing; network/URL playback stays secondary and explicit.
+Playback is a full-screen route/surface, not a permanent navigation destination. Tapping a media item opens it in the correct player. Browsing while audio plays exposes a compact now-playing bar that reopens the music player. Video playback gets an immersive surface with orientation-aware fullscreen behavior. System file picking is the fallback for media not surfaced in MediaStore. Network/URL playback is out of scope for the local-media MVP.
 
 ## Design principles
 - Material 3 Expressive direction, but avoid alpha-only APIs without a documented reason.

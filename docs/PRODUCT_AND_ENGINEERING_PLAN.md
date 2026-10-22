@@ -114,3 +114,75 @@ Keep UI independent of LibVLC through an app-owned engine boundary. First audit 
 - CI must pass before merge; do not merge a feature solely because it compiles.
 - After merge to main, verify the specific commit's CI run and APK artifact, then provide the artifact with build commit and known limitations.
 - Report separately what is implemented, automated-tested, emulator-tested, and physically tested.
+
+
+## UI engineering standards from the supplied Material Design 3 references
+
+The following uploaded documents were reviewed as project guidance before implementation:
+- `README.md` — skill overview and reference map.
+- `SKILL.md` — required Material workflow, design rules, verification and handoff contract.
+- `design-foundations.md` — hierarchy, semantic roles, typography, containment, component selection, loading and form states.
+- `android(1).md` — Compose-specific APIs, dependency gates, edge-to-edge, navigation, performance and Android verification.
+- `expressive.md` — selective expressive emphasis, stability rules, motion and migration strategy.
+- `adaptive-accessibility(1).md` — window classes, adaptive layouts, accessibility and scenario matrix.
+- `sources.md` — official source policy and version-status index.
+- `web(1).md` — reviewed but not a direct implementation guide for this native Android Compose app; do not transfer web-specific component/API guidance to Android.
+
+### Design decision order
+Resolve each screen in this order: user goal and content priority; platform conventions and input model; information architecture/navigation; component semantics; theme roles and adaptive layout; brand expression; decorative detail only when it adds meaning. A polished visual theme does not compensate for unclear navigation or missing states.
+
+### Containment and visual restraint
+- Begin with alignment, spacing and typography; add a visible container only when it communicates ownership, selection, interaction, or independent scrolling.
+- Do not wrap every list row/section in a card, nest cards, or repeat a boundary using a surface, outline, divider and shadow together.
+- Prefer Material surface roles and tonal elevation for ordinary hierarchy; reserve shadows for actual overlap/floating depth.
+- No default glass, blur, glow, alpha-heavy translucent surfaces or decorative gradients. If video controls need a media overlay, keep it localized, maintain contrast against varied footage, and provide a solid fallback.
+- Use the documented 1:3 nested-containment budget and two-level authored-containment limit as review heuristics from the supplied skill, not as official Material specification rules. Document any justified exception.
+
+### Expressive intensity and dependency gate
+- Define an intensity budget per screen: **quiet** for backgrounds/body/routine rows, **clear** for navigation and selected states, **expressive** for a small number of important controls, transitions or states.
+- Use Material 3 Expressive only where it improves recognition, feedback or emotional tone; do not morph or animate every repeated control.
+- Before using each API, confirm it exists in the installed Material3 version and whether it needs an experimental opt-in. Keep opt-ins narrow. Do not move this project from a stable release to an alpha dependency just to style a screen.
+- Refresh the official release notes/API pages before any dependency decision. The uploaded source index is useful research but explicitly version-sensitive. Audit the existing `material-icons-extended` dependency against current official guidance; do not remove or replace it as an incidental change without checking call sites and an alternative icon strategy.
+
+### Adaptive behavior contract
+Design for the current app window, not a device label. The supplied reference describes width classes as compact (<600dp), medium (600–839dp), expanded (840–1199dp), large (1200–1599dp), and extra-large (1600dp+); validate the applicable API/version and use window-size/adaptive APIs instead of manually reading display metrics.
+- Keep the same destinations and navigation state while adapting the navigation component (bottom navigation on compact windows; rail or another supported pattern when it materially improves wider windows).
+- For wider windows, reflow or reveal useful content such as list-detail panes rather than stretching a phone layout or simply increasing padding.
+- Handle compact-height landscape, resizable/multi-window layouts and video rotation without locking orientation as a layout shortcut.
+- Preserve selection, entered text, scroll position where meaningful, playback state and sensible pane-local back behavior during resize or configuration changes.
+- Avoid nested same-direction lazy scroll containers without an explicit size and interaction model; use stable keys and lazy collections for large libraries.
+
+### Accessibility, system UI and interaction requirements
+- Android touch targets must be at least 48dp by 48dp. Icon-only controls need meaningful content descriptions; decorative images/icons should not be announced. Expose selection, toggle, playback progress, loading, errors and actions semantically.
+- Do not rely on color or motion alone to convey status. Verify real rendered contrast in light, dark, dynamic and fallback themes; preserve visible keyboard focus and a logical focus order.
+- Keep scalable typography, test long labels/localized text and enlarged font settings, and ensure content reflows rather than clips.
+- Consider touch as primary but verify keyboard/pointer behavior where available; respect Android/system reduced-motion or animation preferences for nonessential motion.
+- Check edge-to-edge system bars, display cutouts, navigation gesture zones, IME overlap, and avoid applying the same inset twice. Keep focused URL/search fields and their actions visible when the keyboard opens.
+- Every reachable workflow must have intentional loading, empty, partial, success, selected, disabled and recoverable-error states. Keep already-useful content visible during refresh; use skeletons only for meaningful waits and preserve its layout. Errors must offer a recovery path.
+
+### Required visual verification
+Compilation alone is not evidence of a successful visual implementation. For each UI milestone:
+1. Write a concise UI contract specifying primary task/action, hierarchy, navigation, components, state variants, and adaptive transformations.
+2. Build and lint the affected code.
+3. Capture and inspect the actual screen or screenshot/preview at representative supported windows, including compact portrait and compact-height landscape; include wider classes affected by the change.
+4. Review light/dark and dynamic/fallback color, realistic and long content, large font scale, empty/loading/error states, IME and system insets, touch targets, semantics and focus.
+5. Report separately which previews/screenshots were inspected, which emulator/device scenarios were run, and what remains unverified. Never infer visual quality or accessibility from component names, dependency presence or compilation.
+
+## Adjusted acceptance gates
+
+### Design gate (before screen implementation)
+- Screen inventory and navigation/return-flow diagram are reviewed.
+- Each primary screen has a UI contract and states matrix.
+- Reference screenshot annotations explain what is borrowed as a pattern and what is deliberately different.
+- Typography, semantic color roles, shape/spacing rhythm, icon strategy, component emphasis and expressive intensity budget are documented.
+- Compact and expanded-window behaviors plus video compact-height landscape are specified.
+- No decorative containment, inert controls, or decorative hero copy is left in the design.
+
+### UI gate (before feature merge)
+- Layout is inspected at the required window classes and realistic content states, not only compiled.
+- Every visible control performs its named action and exposes accessible state/name.
+- No clipping, overlap, layout jump, duplicate inset, unintended nested scroll or focus loss is observed in tested scenarios.
+- Current stable/experimental API choices, screen-size observations, accessibility checks and remaining risks are stated in the PR.
+
+### Release handoff additions
+Every delivery should state: Material library/version and experimental API usage; navigation and adaptive behavior implemented; accessibility and system UI checks; actual checks and observed screen sizes; test/device coverage; and unresolved risks. Separate code/build success from screenshot/preview inspection, emulator testing, and physical-device validation.

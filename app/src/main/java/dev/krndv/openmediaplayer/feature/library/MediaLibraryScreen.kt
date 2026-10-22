@@ -97,8 +97,8 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     var mediaItems by remember { mutableStateOf<List<LocalMediaItem>>(emptyList()) }
     var scanVersion by remember { mutableIntStateOf(-1) }
     var isScanning by remember { mutableStateOf(false) }
-    var hasAudioPermission by remember { mutableStateOf(hasAudioPermission(context)) }
-    var hasVideoPermission by remember { mutableStateOf(hasVideoPermission(context)) }
+    var hasAudioPermission by remember { mutableStateOf(canReadAudioMedia(context)) }
+    var hasVideoPermission by remember { mutableStateOf(canReadVideoMedia(context)) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var requestedUri by remember { mutableStateOf<Uri?>(null) }
     var requestedTitle by remember { mutableStateOf<String?>(null) }
@@ -106,8 +106,8 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) {
-        hasAudioPermission = hasAudioPermission(context)
-        hasVideoPermission = hasVideoPermission(context)
+        hasAudioPermission = canReadAudioMedia(context)
+        hasVideoPermission = canReadVideoMedia(context)
         if (hasAudioPermission || hasVideoPermission) {
             scanVersion += 1
         } else {
@@ -117,7 +117,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     }
 
     val requestMediaAccess: () -> Unit = {
-        val missing = mediaPermissions(context)
+        val missing = mediaPermissions()
             .filterNot { permission ->
                 ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
             }
@@ -129,7 +129,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     }
 
     LaunchedEffect(Unit) {
-        val missing = mediaPermissions(context)
+        val missing = mediaPermissions()
             .filterNot { permission ->
                 ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
             }
@@ -142,8 +142,8 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
 
     LaunchedEffect(scanVersion) {
         if (scanVersion < 0) return@LaunchedEffect
-        hasAudioPermission = hasAudioPermission(context)
-        hasVideoPermission = hasVideoPermission(context)
+        hasAudioPermission = canReadAudioMedia(context)
+        hasVideoPermission = canReadVideoMedia(context)
         if (!hasAudioPermission && !hasVideoPermission) {
             mediaItems = emptyList()
             isScanning = false
@@ -186,7 +186,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                 actions = {
                     IconButton(
                         onClick = {
-                            val canReadAnything = hasAudioPermission(context) || hasVideoPermission(context)
+                            val canReadAnything = canReadAudioMedia(context) || canReadVideoMedia(context)
                             if (canReadAnything) scanVersion += 1 else requestMediaAccess()
                         },
                     ) {
@@ -277,7 +277,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                         total = visibleItems.size,
                         isScanning = isScanning,
                         onRefresh = {
-                            if (hasAudioPermission(context) || hasVideoPermission(context)) {
+                            if (canReadAudioMedia(context) || canReadVideoMedia(context)) {
                                 scanVersion += 1
                             } else {
                                 requestMediaAccess()
@@ -452,6 +452,14 @@ private fun LibraryHeroCard(
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     strokeWidth = 2.dp,
                 )
+            } else {
+                IconButton(onClick = onRefresh) {
+                    Icon(
+                        Icons.Outlined.Refresh,
+                        contentDescription = "Rescan media",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
             }
         }
     }
@@ -648,14 +656,14 @@ private fun MediaItemCard(
     }
 }
 
-private fun mediaPermissions(context: Context): List<String> =
+private fun mediaPermissions(): List<String> =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         listOf(Manifest.permission.READ_MEDIA_AUDIO, Manifest.permission.READ_MEDIA_VIDEO)
     } else {
         listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
-private fun hasAudioPermission(context: Context): Boolean =
+private fun canReadAudioMedia(context: Context): Boolean =
     ContextCompat.checkSelfPermission(
         context,
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -665,7 +673,7 @@ private fun hasAudioPermission(context: Context): Boolean =
         },
     ) == PackageManager.PERMISSION_GRANTED
 
-private fun hasVideoPermission(context: Context): Boolean =
+private fun canReadVideoMedia(context): Boolean =
     ContextCompat.checkSelfPermission(
         context,
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

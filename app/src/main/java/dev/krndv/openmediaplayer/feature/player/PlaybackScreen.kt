@@ -228,7 +228,7 @@ fun PlaybackScreen(engine: LibVlcPlaybackEngine) {
                         val value = streamUrl.trim()
                         val uri = runCatching { Uri.parse(value) }.getOrNull()
                         val scheme = uri?.scheme?.lowercase(Locale.ROOT)
-                        if (value.isBlank() || scheme !in setOf("http", "https", "rtsp", "rtmp", "udp", "rtp")) {
+                        if (value.isBlank() || uri == null || scheme == null || scheme !in setOf("http", "https", "rtsp", "rtmp", "udp", "rtp")) {
                             feedback = context.getString(R.string.player_invalid_url)
                         } else {
                             feedback = ""

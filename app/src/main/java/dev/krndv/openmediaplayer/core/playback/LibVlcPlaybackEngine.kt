@@ -123,8 +123,8 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
         } catch (exception: Exception) {
             Log.e(
                 TAG,
-                "Open failed: attempt=$attempt scheme=${uri.scheme ?: "unknown"}",
-                exception,
+                "Open failed: attempt=$attempt scheme=${uri.scheme ?: "unknown"} " +
+                    "errorType=${exception.javaClass.simpleName}",
             )
             publishState(
                 PlaybackSnapshot(
@@ -149,7 +149,11 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
             }
             mediaPlayer.play()
         } catch (exception: Exception) {
-            Log.e(TAG, "Play failed: attempt=$attempt scheme=$lastSourceScheme", exception)
+            Log.e(
+                TAG,
+                "Play failed: attempt=$attempt scheme=${lastSourceScheme ?: "unknown"} " +
+                    "errorType=${exception.javaClass.simpleName}",
+            )
             publishState(
                 PlaybackSnapshot(
                     status = PlaybackStatus.ERROR,

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenMediaPlayer</string>
+    <string name="design_system_title">Design foundation</string>
+    <string name="design_system_eyebrow">THE FAMILY FOUNDATION</string>
+    <string name="design_system_headline">Expressive by design</string>
+    <string name="design_system_intro">A shared visual language for a family of thoughtful, privacy-respecting Android apps.</string>
+    <string name="shared_foundation_title">Shared family foundation</string>
+    <string name="shared_foundation_description">Consistent color, shape, typography, spacing and accessible interaction patterns—adapted to each app's purpose.</string>
+    <string name="preview_dialog_button">Preview dialog</string>
+    <string name="color_roles_title">Color roles</string>
+    <string name="color_primary">Primary</string>
+    <string name="color_secondary">Secondary</string>
+    <string name="color_tertiary">Tertiary</string>
+    <string name="component_examples_title">Component examples</string>
+    <string name="button_filled">Filled</string>
+    <string name="button_tonal">Tonal</string>
+    <string name="button_outlined">Outlined</string>
+    <string name="interaction_examples_title">Interaction patterns</string>
+    <string name="filter_description">Filter chips provide consistent, compact selection.</string>
+    <string name="filter_all">All</string>
+    <string name="filter_audio">Audio</string>
+    <string name="filter_video">Video</string>
+    <string name="settings_pattern_title">Settings pattern</string>
+    <string name="dynamic_color_title">Dynamic color</string>
+    <string name="dynamic_color_description">Use wallpaper-derived colors on Android 12 and newer. Older devices use the coordinated family palette.</string>
+    <string name="dialog_title">A family-wide component</string>
+    <string name="dialog_description">Dialogs, buttons and settings rows should share the same interaction rules across future apps.</string>
+    <string name="dialog_confirm">Got it</string>
+    <string name="selected_filter">Selected filter</string>
+</resources>

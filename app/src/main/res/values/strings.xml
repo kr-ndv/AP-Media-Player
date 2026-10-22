@@ -21,7 +21,7 @@
     <string name="player_headline">Now playing</string>
     <string name="player_intro">Try a local audio or video file, or enter a stream URL. Format support depends on the stream and device.</string>
     <string name="player_local_title">Play a file</string>
-    <string name="player_local_description">Choose an audio or video file using Android's document picker.</string>
+    <string name="player_local_description">Choose an audio or video file using the Android document picker.</string>
     <string name="player_choose_file">Choose audio or video</string>
     <string name="player_network_title">Open a network stream</string>
     <string name="player_url_label">Stream URL</string>

@@ -83,7 +83,7 @@ Keep UI independent of LibVLC through an app-owned engine boundary. First audit 
 - Gate: navigation and accessibility tests pass; screenshot review on at least compact phone and large/landscape layout.
 
 ### Phase 4 — Library quality
-- MediaStore scans on IO dispatcher, permission-denied/partial-grant states, empty states and retry/rescan.
+- MediaStore scans on IO dispatcher, permission-denied/partial-grant states, empty states and retry/rescan. On Android 14+ (API 34+), explicitly handle selected-video-only access via `READ_MEDIA_VISUAL_USER_SELECTED`, permission changes made in Settings, and reselection; distinguish partial access from an empty collection and re-check permissions on resume.
 - Metadata handling, artwork/video thumbnails with caching/fallbacks, search, sorting, list/grid as agreed, duplicate/unknown metadata behavior.
 - Gate: correctness against a controlled media folder, performance check for large library, and no main-thread I/O.
 
@@ -111,7 +111,7 @@ Keep UI independent of LibVLC through an app-owned engine boundary. First audit 
 
 ## Test plan
 1. Unit: player-state transition reducer/session IDs; metadata formatting; sorting/search; preferences serialization.
-2. Repository: no permissions, audio-only permission, video-only permission, both, revoked permission, empty MediaStore, disappearing file, malformed metadata and query error.
+2. Repository: no permissions, audio-only permission, full video permission, selected-video-only permission on API 34+, both, revoked/changed permission, empty MediaStore, disappearing file, malformed metadata and query error.
 3. UI instrumentation: navigation destinations, search/filter, opening audio/video, back from player, mini-player visibility, settings persistence, permission rationale/retry, empty/error states.
 4. Playback instrumentation/emulator: bundled open-license local audio/video samples; start, pause/resume, stop, seek, end event, reopen next file rapidly, rotate during video, go background/foreground for audio, invalid codec/URI error behavior.
 5. Manual physical device: actual codecs/devices, decoder failures, audio focus/headphones, display cutouts, battery/resource behavior, real video surface and full-screen behavior.

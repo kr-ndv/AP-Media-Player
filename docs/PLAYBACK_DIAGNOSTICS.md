@@ -8,10 +8,11 @@
 - The engine logs open/play/pause/stop/release commands and observed LibVLC state events under the `OpenMediaPlayerPlayback` tag.
 - Logs record the source URI scheme and attempt number, not the full URI or local file path.
 - A native `Stopped` event no longer independently sets app state. The app-owned `stop()` command reports `STOPPED`; this avoids a delayed native stop from an item being replaced from overwriting the replacement's state. This needs device/emulator regression testing.
+- Android `content://` inputs (the normal shape of MediaStore and document-picker selections) are opened through `ContentResolver` and handed to LibVLC through an `fd://` media location; the corresponding descriptor remains open until the media is replaced or the engine is released. A pure unit test covers the mapping, while the actual provider/decoder path still needs device testing.
 - The generic playback error copy is now local-file oriented.
 - Unit tests cover the native-event-to-snapshot mapping, including that `Stopped` does not produce an app snapshot.
 
-**This does not establish the root cause of the previously reported black video/stopped-state symptom.** Real media decoding and the LibVLC video output still need to be tested on an emulator and physical device.
+**This does not establish the root cause of the previously reported black video/stopped-state symptom.** The direct `content://` handoff was a credible source-code problem, and it has been changed to the descriptor-backed path, but real MediaStore/document-picker playback and LibVLC video output still need to be tested on an emulator and physical device.
 
 ## Reproduction checklist
 

@@ -2,7 +2,7 @@
 
 An Android media player prototype built with Kotlin, Jetpack Compose and Material 3, with a privacy-respecting, local-first product direction.
 
-**Current stage:** initial media-library UI and a LibVLC feasibility adapter. Playback has not yet been validated on a device, and the app is not ready for daily use.
+**Current stage:** a working player-screen prototype with a LibVLC adapter and event-driven UI state. Native playback has not yet been validated on a device, and the app is not ready for daily use.
 
 ## Product direction
 
@@ -17,11 +17,12 @@ An Android media player prototype built with Kotlin, Jetpack Compose and Materia
 ## Current implementation
 
 - Material 3 design foundation and theme showcase components.
-- Initial Library, Network, Playlists and Settings navigation.
-- Provisional LibVLC adapter with basic open/play/pause/stop/release operations.
-- Android CI for build, lint, unit-test and instrumentation-test compilation.
+- Library, Player, Network, Playlists and Settings navigation.
+- Player screen with a native video surface, Android document picker for local audio/video, and a direct-stream URL field.
+- LibVLC event reporting for opening, playing, paused, stopped, ended and playback-error states; the UI no longer assumes an open request means playback succeeded.
+- Android CI builds the debug app, compiles the instrumentation-test APK, runs unit tests and runs lint.
 
-The UI currently uses explanatory placeholders for media that is not connected yet. The playback adapter does not yet attach a video surface, publish playback state/events, manage audio focus, or prove local/network playback on a device.
+The media-library index, queues, background playback, audio focus, seeking and subtitle selection are not implemented yet. The player remains a prototype: a successful build does not prove that local files or network streams play on a real device. Format support depends on the stream, bundled native components and device.
 
 ## Documentation
 

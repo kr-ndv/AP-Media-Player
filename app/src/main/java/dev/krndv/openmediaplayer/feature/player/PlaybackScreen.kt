@@ -2,6 +2,7 @@ package dev.krndv.openmediaplayer.feature.player
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.FrameLayout
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -30,18 +31,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import android.widget.FrameLayout
 import dev.krndv.openmediaplayer.R
 import dev.krndv.openmediaplayer.core.design.tokens.FamilySpacing
 import dev.krndv.openmediaplayer.core.playback.LibVlcPlaybackEngine
+import dev.krndv.openmediaplayer.core.playback.PlaybackSnapshot
+import dev.krndv.openmediaplayer.core.playback.PlaybackStateListener
+import dev.krndv.openmediaplayer.core.playback.PlaybackStatus
+import java.util.Locale
 import org.videolan.libvlc.util.VLCVideoLayout
 
 @Composable
 fun PlaybackScreen(engine: LibVlcPlaybackEngine) {
     val context = LocalContext.current
     var streamUrl by rememberSaveable { mutableStateOf("") }
-    var playing by remember { mutableStateOf(engine.isPlaying) }
-    var status by rememberSaveable { mutableStateOf("") }
+    var playbackSnapshot by remember(engine) { mutableStateOf(engine.playbackState) }
+    var feedback by rememberSaveable { mutableStateOf("") }
     var videoLayout by remember { mutableStateOf<VLCVideoLayout?>(null) }
 
     val filePicker = rememberLauncherForActivityResult(
@@ -56,16 +60,24 @@ fun PlaybackScreen(engine: LibVlcPlaybackEngine) {
             } catch (_: SecurityException) {
                 // Some document providers do not grant persistable permissions.
             }
+
+            feedback = ""
             runCatching { engine.open(uri) }
-                .onSuccess {
-                    playing = true
-                    status = context.getString(R.string.player_open_requested)
-                }
                 .onFailure {
-                    playing = false
-                    status = context.getString(R.string.player_open_failed, it.localizedMessage ?: it.javaClass.simpleName)
+                    feedback = context.getString(
+                        R.string.player_open_failed,
+                        it.localizedMessage ?: it.javaClass.simpleName,
+                    )
                 }
         }
+    }
+
+    DisposableEffect(engine) {
+        val listener = PlaybackStateListener { snapshot ->
+            playbackSnapshot = snapshot
+        }
+        engine.addPlaybackStateListener(listener)
+        onDispose { engine.removePlaybackStateListener(listener) }
     }
 
     DisposableEffect(videoLayout) {
@@ -75,6 +87,20 @@ fun PlaybackScreen(engine: LibVlcPlaybackEngine) {
             if (layout != null) engine.detachVideoLayout(layout)
         }
     }
+
+    val playbackStateMessage = when (playbackSnapshot.status) {
+        PlaybackStatus.IDLE -> ""
+        PlaybackStatus.OPENING -> stringResource(R.string.player_state_opening)
+        PlaybackStatus.PLAYING -> stringResource(R.string.player_state_playing)
+        PlaybackStatus.PAUSED -> stringResource(R.string.player_state_paused)
+        PlaybackStatus.STOPPED -> stringResource(R.string.player_state_stopped)
+        PlaybackStatus.ENDED -> stringResource(R.string.player_state_ended)
+        PlaybackStatus.ERROR -> playbackSnapshot.errorMessage
+            ?.takeIf { it.isNotBlank() }
+            ?.let { context.getString(R.string.player_open_failed, it) }
+            ?: stringResource(R.string.player_state_error)
+    }
+    val statusText = feedback.ifBlank { playbackStateMessage }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -111,30 +137,46 @@ fun PlaybackScreen(engine: LibVlcPlaybackEngine) {
         Row(horizontalArrangement = Arrangement.spacedBy(FamilySpacing.small)) {
             Button(
                 onClick = {
-                    if (playing) {
-                        engine.pause()
-                        playing = false
-                    } else {
-                        runCatching { engine.play() }
-                            .onSuccess { playing = true }
-                            .onFailure {
-                                status = context.getString(
-                                    R.string.player_open_failed,
-                                    it.localizedMessage ?: it.javaClass.simpleName,
-                                )
-                            }
+                    feedback = ""
+                    runCatching {
+                        if (playbackSnapshot.status == PlaybackStatus.PLAYING) {
+                            engine.pause()
+                        } else {
+                            engine.play()
+                        }
+                    }.onFailure {
+                        feedback = context.getString(
+                            R.string.player_open_failed,
+                            it.localizedMessage ?: it.javaClass.simpleName,
+                        )
                     }
                 },
+                enabled = playbackSnapshot.status != PlaybackStatus.IDLE &&
+                    playbackSnapshot.status != PlaybackStatus.OPENING,
                 modifier = Modifier.weight(1f),
             ) {
-                Text(if (playing) stringResource(R.string.player_pause) else stringResource(R.string.player_play))
+                Text(
+                    if (playbackSnapshot.status == PlaybackStatus.PLAYING) {
+                        stringResource(R.string.player_pause)
+                    } else {
+                        stringResource(R.string.player_play)
+                    },
+                )
             }
             OutlinedButton(
                 onClick = {
-                    engine.stop()
-                    playing = false
-                    status = context.getString(R.string.player_stopped)
+                    feedback = ""
+                    runCatching { engine.stop() }
+                        .onFailure {
+                            feedback = context.getString(
+                                R.string.player_open_failed,
+                                it.localizedMessage ?: it.javaClass.simpleName,
+                            )
+                        }
                 },
+                enabled = playbackSnapshot.status == PlaybackStatus.OPENING ||
+                    playbackSnapshot.status == PlaybackStatus.PLAYING ||
+                    playbackSnapshot.status == PlaybackStatus.PAUSED,
                 modifier = Modifier.weight(1f),
             ) {
                 Text(stringResource(R.string.player_stop))
@@ -185,17 +227,14 @@ fun PlaybackScreen(engine: LibVlcPlaybackEngine) {
                     onClick = {
                         val value = streamUrl.trim()
                         val uri = runCatching { Uri.parse(value) }.getOrNull()
-                        if (uri == null || uri.scheme !in setOf("http", "https", "rtsp", "rtmp", "udp", "rtp")) {
-                            status = context.getString(R.string.player_invalid_url)
+                        val scheme = uri?.scheme?.lowercase(Locale.ROOT)
+                        if (value.isBlank() || scheme !in setOf("http", "https", "rtsp", "rtmp", "udp", "rtp")) {
+                            feedback = context.getString(R.string.player_invalid_url)
                         } else {
+                            feedback = ""
                             runCatching { engine.open(uri) }
-                                .onSuccess {
-                                    playing = true
-                                    status = context.getString(R.string.player_open_requested)
-                                }
                                 .onFailure {
-                                    playing = false
-                                    status = context.getString(
+                                    feedback = context.getString(
                                         R.string.player_open_failed,
                                         it.localizedMessage ?: it.javaClass.simpleName,
                                     )
@@ -209,14 +248,14 @@ fun PlaybackScreen(engine: LibVlcPlaybackEngine) {
             }
         }
 
-        if (status.isNotBlank()) {
+        if (statusText.isNotBlank()) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceContainer,
             ) {
                 Text(
-                    text = status,
+                    text = statusText,
                     modifier = Modifier.padding(FamilySpacing.medium),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

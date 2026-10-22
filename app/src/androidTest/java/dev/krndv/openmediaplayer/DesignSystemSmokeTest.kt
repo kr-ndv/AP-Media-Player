@@ -22,14 +22,14 @@ class MediaLibrarySmokeTest {
 
     @Test
     fun networkDestinationExplainsPlannedSources() {
-        composeRule.onAllNodesWithText("Network").onLast().performClick()
+        composeRule.onAllNodesWithText("Network")[1].performClick()
         composeRule.onNodeWithText("Play from anywhere.").assertIsDisplayed()
         composeRule.onNodeWithText("Network shares").assertIsDisplayed()
     }
 
     @Test
     fun playerDestinationShowsLocalAndNetworkOptions() {
-        composeRule.onAllNodesWithText("Player").onLast().performClick()
+        composeRule.onAllNodesWithText("Player")[1].performClick()
         composeRule.onNodeWithText("Now playing").assertIsDisplayed()
         composeRule.onNodeWithText("Choose audio or video").assertIsDisplayed()
         composeRule.onNodeWithText("Open stream").assertIsDisplayed()

@@ -33,6 +33,7 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -69,6 +70,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import dev.krndv.openmediaplayer.core.playback.LibVlcPlaybackEngine
 import dev.krndv.openmediaplayer.feature.player.PlaybackScreen
+import dev.krndv.openmediaplayer.feature.player.PlayerAppearance
+import dev.krndv.openmediaplayer.feature.player.PlayerAppearanceSettingsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Locale
@@ -78,11 +81,13 @@ private enum class MediaDestination(
     val icon: ImageVector,
     val kind: MediaKind? = null,
     val isPlayer: Boolean = false,
+    val isSettings: Boolean = false,
 ) {
     LIBRARY("Home", Icons.Outlined.Home),
     MUSIC("Music", Icons.Outlined.MusicNote, MediaKind.AUDIO),
     VIDEOS("Videos", Icons.Outlined.Movie, MediaKind.VIDEO),
     PLAYER("Player", Icons.Outlined.PlayCircle, isPlayer = true),
+    SETTINGS("Settings", Icons.Outlined.Settings, isSettings = true),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,6 +108,11 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var requestedUri by remember { mutableStateOf<Uri?>(null) }
     var requestedTitle by remember { mutableStateOf<String?>(null) }
+    var playerAppearance by remember(context) { mutableStateOf(PlayerAppearance.load(context)) }
+    val updatePlayerAppearance: (PlayerAppearance) -> Unit = { updated ->
+        playerAppearance = updated
+        updated.save(context)
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
@@ -212,7 +222,19 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
             }
         },
     ) { innerPadding ->
-        if (destination.isPlayer) {
+        if (destination.isSettings) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                PlayerAppearanceSettingsScreen(
+                    appearance = playerAppearance,
+                    onAppearanceChange = updatePlayerAppearance,
+                )
+            }
+        } else if (destination.isPlayer) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -224,6 +246,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                     engine = engine,
                     requestedUri = requestedUri,
                     requestedTitle = requestedTitle,
+                    appearance = playerAppearance,
                     onRequestConsumed = {
                         requestedUri = null
                         requestedTitle = null

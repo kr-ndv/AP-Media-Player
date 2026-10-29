@@ -98,6 +98,7 @@ private enum class MediaDestination(
     LIBRARY("Home", Icons.Outlined.Home),
     MUSIC("Music", Icons.Outlined.MusicNote, MediaKind.AUDIO),
     VIDEOS("Videos", Icons.Outlined.Movie, MediaKind.VIDEO),
+    COLLECTIONS("Library", Icons.Outlined.FolderOpen),
     PLAYER("Player", Icons.Outlined.PlayCircle, isPlayer = true),
     SETTINGS("Settings", Icons.Outlined.Settings, isSettings = true),
 }
@@ -235,6 +236,11 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                     }
                 },
                 actions = {
+                    if (!destination.isSettings) {
+                        IconButton(onClick = { selectedDestinationName = MediaDestination.SETTINGS.name }) {
+                            Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+                        }
+                    }
                     IconButton(
                         onClick = {
                             val canReadAnything = canReadAudioMedia(context) || canReadVideoMedia(context)
@@ -313,7 +319,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                         }
                     }
                     NavigationBar {
-                        MediaDestination.entries.filterNot { it.isPlayer }.forEach { item ->
+                        MediaDestination.entries.filterNot { it.isPlayer || it.isSettings }.forEach { item ->
                             NavigationBarItem(
                                 selected = destination == item,
                                 onClick = { selectedDestinationName = item.name },
@@ -422,7 +428,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                 contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                if (destination != MediaDestination.LIBRARY) {
+                if (destination == MediaDestination.MUSIC || destination == MediaDestination.VIDEOS) {
                     item {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(

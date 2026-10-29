@@ -108,6 +108,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     val repository = remember(context) { MediaRepository(context) }
 
     var selectedDestinationName by rememberSaveable { mutableStateOf(MediaDestination.LIBRARY.name) }
+    var previousDestinationName by rememberSaveable { mutableStateOf(MediaDestination.LIBRARY.name) }
     val destination = MediaDestination.entries.firstOrNull { it.name == selectedDestinationName }
         ?: MediaDestination.LIBRARY
 
@@ -195,6 +196,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
         activeMediaTitle = item.title
         activeMediaIsVideo = item.kind == MediaKind.VIDEO
         if (item.kind == MediaKind.VIDEO) {
+            previousDestinationName = selectedDestinationName
             requestedUri = item.uri
             requestedTitle = item.title
             selectedDestinationName = MediaDestination.PLAYER.name
@@ -291,7 +293,10 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                                         contentDescription = if (playbackSnapshot.status == PlaybackStatus.PLAYING) "Pause" else "Play",
                                     )
                                 }
-                                IconButton(onClick = { selectedDestinationName = MediaDestination.PLAYER.name }) {
+                                IconButton(onClick = {
+                                    previousDestinationName = selectedDestinationName
+                                    selectedDestinationName = MediaDestination.PLAYER.name
+                                }) {
                                     Icon(Icons.Outlined.PlayCircle, contentDescription = "Expand player")
                                 }
                             }
@@ -336,7 +341,9 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                     IconButton(onClick = {
                         requestedUri = null
                         requestedTitle = null
-                        selectedDestinationName = MediaDestination.LIBRARY.name
+                        selectedDestinationName = MediaDestination.entries
+                            .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
+                            ?.name ?: MediaDestination.LIBRARY.name
                     }) {
                         Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to library")
                     }

@@ -78,7 +78,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import dev.krndv.openmediaplayer.core.playback.LibVlcPlaybackEngine
-import dev.krndv.openmediaplayer.core.playback.PlaybackSnapshot
 import dev.krndv.openmediaplayer.core.playback.PlaybackStateListener
 import dev.krndv.openmediaplayer.core.playback.PlaybackStatus
 import dev.krndv.openmediaplayer.feature.player.PlaybackScreen

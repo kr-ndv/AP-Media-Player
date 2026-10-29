@@ -260,7 +260,13 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                             tonalElevation = 3.dp,
                         ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        previousDestinationName = selectedDestinationName
+                                        selectedDestinationName = MediaDestination.PLAYER.name
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
@@ -300,12 +306,6 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                                         if (playbackSnapshot.status == PlaybackStatus.PLAYING) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
                                         contentDescription = if (playbackSnapshot.status == PlaybackStatus.PLAYING) "Pause" else "Play",
                                     )
-                                }
-                                IconButton(onClick = {
-                                    previousDestinationName = selectedDestinationName
-                                    selectedDestinationName = MediaDestination.PLAYER.name
-                                }) {
-                                    Icon(Icons.Outlined.PlayCircle, contentDescription = "Expand player")
                                 }
                             }
                         }

@@ -341,21 +341,25 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                    .then(
+                        if (activeMediaIsVideo) Modifier
+                        else Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp),
+                    ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = {
-                        requestedUri = null
-                        requestedTitle = null
-                        selectedDestinationName = MediaDestination.entries
-                            .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
-                            ?.name ?: MediaDestination.LIBRARY.name
-                    }) {
-                        Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to library")
+                if (!activeMediaIsVideo) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = {
+                            requestedUri = null
+                            requestedTitle = null
+                            selectedDestinationName = MediaDestination.entries
+                                .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
+                                ?.name ?: MediaDestination.LIBRARY.name
+                        }) {
+                            Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to library")
+                        }
+                        Text("Now Playing", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     }
-                    Text("Now Playing", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                 }
                 PlaybackScreen(
                     engine = engine,

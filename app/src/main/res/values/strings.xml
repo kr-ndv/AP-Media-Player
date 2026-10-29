@@ -37,7 +37,7 @@
     <string name="player_state_paused">Paused</string>
     <string name="player_state_stopped">Playback stopped.</string>
     <string name="player_state_ended">Playback finished.</string>
-    <string name="player_state_error">Playback failed. Check the file, stream URL, or network connection.</string>
+    <string name="player_state_error">Could not play this file. It may be damaged, inaccessible, or use an unsupported format.</string>
     <string name="player_prototype_notice">Still in development: background playback, audio focus, seeking and subtitle selection are not fully implemented yet.</string>
     <string name="network_headline">Play from anywhere.</string>
     <string name="network_intro">Direct network streams are supported by the player; network shares and discovery are planned.</string>

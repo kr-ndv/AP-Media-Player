@@ -5,7 +5,7 @@
 
 ## Context
 
-OpenMediaPlayer aims to handle local audio/video and a broad range of network streams. The playback implementation must remain replaceable so UI and media-library code do not become coupled to one vendor API.
+OpenMediaPlayer's initial release is scoped to local audio and video files on the device, including MediaStore items and files the user selects through the system document picker. Network streams and remote shares are not part of the MVP. The playback implementation must remain replaceable so UI and media-library code do not become coupled to one vendor API.
 
 ## Decision
 
@@ -15,7 +15,7 @@ Place the engine behind a small app-owned `PlaybackEngine` interface. Do not exp
 
 ## Why this candidate
 
-The official VideoLAN project documents LibVLC support for local media, a wide range of media/streaming protocols, hardware decoding where supported, and network browsing for protocols such as SMB, FTP, SFTP, NFS, UPnP and DLNA. These are useful capabilities for the product's stated direction.
+The official VideoLAN project documents LibVLC support for local media, a wide range of formats and protocols, and hardware decoding where supported. For the MVP, the engine is evaluated only on local media; the existence of remote protocol support is not a reason to surface networking UI or request Internet access.
 
 Sources:
 - https://github.com/videolan/vlc-android
@@ -35,8 +35,8 @@ Before a public binary release:
 ## Prototype acceptance criteria
 
 - CI resolves and packages the selected artifact for supported Android ABIs.
-- A real device/emulator can open and play one local audio file and one local video.
-- A controlled HTTP stream plays, reports errors and can be stopped/released without leaking resources.
+- A real device/emulator can open and play local audio and video using both MediaStore content URIs and a system document-picker URI.
+- Confirm local playback works with the app offline and does not require the Internet permission.
 - Verify pause/resume, lifecycle/background behavior, audio focus, video surface handling and subtitles/tracks.
 - Record tested Android versions, ABI, device, known limitations and licensing findings.
 
@@ -48,3 +48,10 @@ Before a public binary release:
 ## Consequences
 
 The engine interface is the stable app-owned boundary; LibVLC remains an implementation detail. No feature should claim universal codec, stream, DRM or network compatibility. Hardware decoding and format support vary by device and by the exact native build.
+
+
+## Product scope clarification — 2026-10-22
+
+The product requirement is local media playback only for the first release. Earlier wording in this ADR about network streams, protocol browsing and a controlled HTTP acceptance test describes LibVLC capability, not the accepted MVP scope. The MVP must not include URL stream entry, network-share discovery, online feeds, or related networking permissions. Reopen this scope only through a separate product decision and a security/permission review.
+
+This clarification does not change the need to validate the selected LibVLC artifact's license terms and local-file playback behavior before distribution.

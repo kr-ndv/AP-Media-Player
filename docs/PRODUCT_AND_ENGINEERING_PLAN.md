@@ -3,7 +3,17 @@
 **Status:** Planning baseline; implementation should begin only after the design and playback investigation gates are satisfied.
 
 ## Product goal
-Build a polished, privacy-respecting Android app for playing media stored on the device. The app is local-first: library queries, playback history, queue, and preferences remain on-device. Network access is limited to explicitly requested local-network / URL playback or features added later by deliberate product decision.
+Build a polished, privacy-respecting Android app for playing media stored on the device. The first-release product scope is strictly local media: library queries, playback, queue, playback history, and preferences remain on-device. Direct HTTP/RTSP streams, network shares, remote discovery, online catalogs, streaming feeds, tracking, sign-in, and other online services are out of scope. Do not request Internet access for the local-media MVP; any later network feature requires a separate explicit product decision and permission/security review.
+
+
+## Planning artifacts
+
+- [Baseline audit](BASELINE_AUDIT.md) — current stack, CI and test gaps, library/player risks, and observed screenshot mismatch.
+- [Screen-by-screen design specification](DESIGN_SPEC.md) — navigation, individual screen contracts, states, adaptive behavior, reference findings, accessibility and acceptance gates.
+- [Playback engine ADR](architecture/adr-001-playback-engine.md) — engine choice, local-only scope, and licensing decision gate.
+- [Licensing and third-party distribution audit](LICENSING_AUDIT.md) — app license decision, LibVLC AAR/codec inventory, notices and release blockers.
+- [Existing design-system principles](design-system/principles.md), [tokens](design-system/tokens.md), [component conventions](design-system/components.md), and [accessibility baseline](design-system/accessibility.md).
+
 
 ## Reference review
 Use these repositories for design research and interaction patterns only:
@@ -25,7 +35,7 @@ Primary bottom destinations:
 3. Videos — local videos with thumbnails where available, list/grid option, sorting and search.
 4. Settings — appearance, library, playback and privacy/about sections. No decorative/inert settings.
 
-Playback is a full-screen route/surface, not a permanent navigation destination. Tapping a media item opens it in the correct player. Browsing while audio plays exposes a compact now-playing bar that reopens the music player. Video playback gets an immersive surface with orientation-aware fullscreen behavior. File picker is a fallback to MediaStore browsing; network/URL playback stays secondary and explicit.
+Playback is a full-screen route/surface, not a permanent navigation destination. Tapping a media item opens it in the correct player. Browsing while audio plays exposes a compact now-playing bar that reopens the music player. Video playback gets an immersive surface with orientation-aware fullscreen behavior. System file picking is the fallback for media not surfaced in MediaStore. Network/URL playback is out of scope for the local-media MVP.
 
 ## Design principles
 - Material 3 Expressive direction, but avoid alpha-only APIs without a documented reason.
@@ -61,7 +71,7 @@ Keep UI independent of LibVLC through an app-owned engine boundary. First audit 
 - Deliver design spec and acceptance checklist before implementing the redesign.
 
 ### Phase 2 — Playback correctness spike
-- Build reproducible tests with small licensed/royalty-free local sample files: audio and video, common supported formats, malformed/unsupported input, short clip, larger file, content URI and document picker.
+- Build reproducible tests with small licensed/royalty-free local sample files: audio and video, common supported formats, malformed/unsupported input, short clip, larger file, MediaStore content URIs, and system document-picker URIs.
 - Fix event ordering, URI access, player and surface lifecycle, seeking and stop/reopen behavior.
 - Establish truthful capability matrix for formats/containers/codecs based on actual tested combinations.
 - Add unit tests for state transitions and instrumentation tests for user-visible playback controls.
@@ -74,7 +84,7 @@ Keep UI independent of LibVLC through an app-owned engine boundary. First audit 
 - Gate: navigation and accessibility tests pass; screenshot review on at least compact phone and large/landscape layout.
 
 ### Phase 4 — Library quality
-- MediaStore scans on IO dispatcher, permission-denied/partial-grant states, empty states and retry/rescan.
+- MediaStore scans on IO dispatcher, permission-denied/partial-grant states, empty states and retry/rescan. On Android 14+ (API 34+), explicitly handle selected-video-only access via `READ_MEDIA_VISUAL_USER_SELECTED`, permission changes made in Settings, and reselection; distinguish partial access from an empty collection and re-check permissions on resume.
 - Metadata handling, artwork/video thumbnails with caching/fallbacks, search, sorting, list/grid as agreed, duplicate/unknown metadata behavior.
 - Gate: correctness against a controlled media folder, performance check for large library, and no main-thread I/O.
 
@@ -89,7 +99,7 @@ Keep UI independent of LibVLC through an app-owned engine boundary. First audit 
 
 ### Phase 7 — Settings, privacy and polish
 - Theme/system/dynamic color; library refresh/scan options; user-visible playback settings; privacy/about; reset options where appropriate.
-- Verify permissions are minimal and clearly explained. Do not send analytics or library contents remotely.
+- Verify permissions are minimal and clearly explained. The local-media MVP should not make network requests or require INTERNET permission. Do not send analytics or library contents remotely.
 - Verify open-source/licence obligations for LibVLC and all included assets/dependencies before release.
 - Gate: persistence, accessibility, contrast, font scale, TalkBack labels and privacy review.
 
@@ -102,11 +112,11 @@ Keep UI independent of LibVLC through an app-owned engine boundary. First audit 
 
 ## Test plan
 1. Unit: player-state transition reducer/session IDs; metadata formatting; sorting/search; preferences serialization.
-2. Repository: no permissions, audio-only permission, video-only permission, both, revoked permission, empty MediaStore, disappearing file, malformed metadata and query error.
+2. Repository: no permissions, audio-only permission, full video permission, selected-video-only permission on API 34+, both, revoked/changed permission, empty MediaStore, disappearing file, malformed metadata and query error.
 3. UI instrumentation: navigation destinations, search/filter, opening audio/video, back from player, mini-player visibility, settings persistence, permission rationale/retry, empty/error states.
-4. Playback instrumentation/emulator: bundled open-license audio/video samples; start, pause/resume, stop, seek, end event, reopen next file rapidly, rotate during video, go background/foreground for audio, invalid codec/URI error behavior.
+4. Playback instrumentation/emulator: bundled open-license local audio/video samples; start, pause/resume, stop, seek, end event, reopen next file rapidly, rotate during video, go background/foreground for audio, invalid codec/URI error behavior.
 5. Manual physical device: actual codecs/devices, decoder failures, audio focus/headphones, display cutouts, battery/resource behavior, real video surface and full-screen behavior.
-6. Release validation: fresh install/update install, APK signature/install, app starts offline, permissions align with user actions, no unexpected networking, and CI artifacts match commit.
+6. Release validation: fresh install/update install, APK signature/install, app starts and plays local files offline, permissions align with user actions, no networking or Internet permission in the MVP, and CI artifacts match the commit.
 
 ## Delivery workflow
 - Feature branch per milestone; small pull requests with scope and test results.

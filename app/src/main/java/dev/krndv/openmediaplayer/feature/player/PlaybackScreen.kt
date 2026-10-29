@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -31,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -139,12 +141,21 @@ fun PlaybackScreen(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(FamilySpacing.small)) {
             Text(
-                text = stringResource(R.string.player_headline),
-                style = MaterialTheme.typography.headlineLarge,
+                text = "NOW PLAYING",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
             )
             Text(
                 text = currentMediaTitle.ifBlank {
+                    stringResource(R.string.player_headline)
+                },
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            Text(
+                text = if (currentMediaTitle.isBlank()) {
                     stringResource(R.string.player_intro)
+                } else {
+                    "Ready when you are"
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -177,7 +188,11 @@ fun PlaybackScreen(
             )
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(FamilySpacing.small)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(FamilySpacing.medium),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Button(
                 onClick = {
                     feedback = ""
@@ -196,7 +211,7 @@ fun PlaybackScreen(
                 },
                 enabled = playbackSnapshot.status != PlaybackStatus.IDLE &&
                     playbackSnapshot.status != PlaybackStatus.OPENING,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1.35f).heightIn(min = 56.dp),
             ) {
                 Text(
                     if (playbackSnapshot.status == PlaybackStatus.PLAYING) {
@@ -220,13 +235,18 @@ fun PlaybackScreen(
                 enabled = playbackSnapshot.status == PlaybackStatus.OPENING ||
                     playbackSnapshot.status == PlaybackStatus.PLAYING ||
                     playbackSnapshot.status == PlaybackStatus.PAUSED,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).heightIn(min = 56.dp),
             ) {
                 Text(stringResource(R.string.player_stop))
             }
         }
 
-        Card(shape = MaterialTheme.shapes.extraLarge) {
+        Card(
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
+        ) {
             Column(
                 modifier = Modifier.padding(FamilySpacing.large),
                 verticalArrangement = Arrangement.spacedBy(FamilySpacing.medium),
@@ -249,7 +269,12 @@ fun PlaybackScreen(
             }
         }
 
-        Card(shape = MaterialTheme.shapes.extraLarge) {
+        Card(
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
+        ) {
             Column(
                 modifier = Modifier.padding(FamilySpacing.large),
                 verticalArrangement = Arrangement.spacedBy(FamilySpacing.medium),

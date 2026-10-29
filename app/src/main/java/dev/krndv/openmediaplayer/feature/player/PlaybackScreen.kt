@@ -207,7 +207,8 @@ fun PlaybackScreen(
                             listOf(MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.primary, Color.Black),
                         )
                     },
-                ),
+                )
+                .padding(if (appearance.backgroundEnabled) 10.dp else 0.dp),
         ) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),

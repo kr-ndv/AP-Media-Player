@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -111,6 +112,14 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     var previousDestinationName by rememberSaveable { mutableStateOf(MediaDestination.LIBRARY.name) }
     val destination = MediaDestination.entries.firstOrNull { it.name == selectedDestinationName }
         ?: MediaDestination.LIBRARY
+
+    BackHandler(enabled = destination.isPlayer) {
+        requestedUri = null
+        requestedTitle = null
+        selectedDestinationName = MediaDestination.entries
+            .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
+            ?.name ?: MediaDestination.LIBRARY.name
+    }
 
     var mediaItems by remember { mutableStateOf<List<LocalMediaItem>>(emptyList()) }
     var scanVersion by remember { mutableIntStateOf(-1) }

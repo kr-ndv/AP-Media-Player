@@ -103,6 +103,8 @@ fun PlaybackScreen(
     onRequestConsumed: () -> Unit = {},
     onMediaChanged: (title: String, isVideo: Boolean) -> Unit = { _, _ -> },
     onExitPlayer: () -> Unit = {},
+    onPreviousTrack: () -> Unit = {},
+    onNextTrack: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var streamUrl by rememberSaveable { mutableStateOf("") }
@@ -485,7 +487,7 @@ fun PlaybackScreen(
                     IconButton(onClick = { shuffleEnabled = !shuffleEnabled }) {
                         Icon(Icons.Outlined.Shuffle, contentDescription = "Shuffle", tint = if (shuffleEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    IconButton(onClick = { engine.seekTo((currentPositionMs - 10_000L).coerceAtLeast(0L)) }) {
+                    IconButton(onClick = onPreviousTrack) {
                         Icon(Icons.Outlined.SkipPrevious, contentDescription = "Previous track")
                     }
                     FilledIconButton(
@@ -503,7 +505,7 @@ fun PlaybackScreen(
                             modifier = Modifier.size(38.dp),
                         )
                     }
-                    IconButton(onClick = { engine.seekTo((currentPositionMs + 10_000L).coerceAtMost(durationMs)) }) {
+                    IconButton(onClick = onNextTrack) {
                         Icon(Icons.Outlined.SkipNext, contentDescription = "Next track")
                     }
                     IconButton(onClick = { repeatEnabled = !repeatEnabled }) {

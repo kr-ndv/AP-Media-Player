@@ -130,6 +130,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
             ?.name ?: MediaDestination.LIBRARY.name
     }
     var activeMediaTitle by rememberSaveable { mutableStateOf("") }
+    var activeMediaArtist by rememberSaveable { mutableStateOf("") }
     var activeMediaIsVideo by rememberSaveable { mutableStateOf(false) }
     var activeMediaUri by remember { mutableStateOf<Uri?>(null) }
     var playbackSnapshot by remember(engine) { mutableStateOf(engine.playbackState) }
@@ -204,6 +205,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
 
     val playMedia: (LocalMediaItem) -> Unit = { item ->
         activeMediaTitle = item.title
+        activeMediaArtist = item.artist.orEmpty()
         activeMediaIsVideo = item.kind == MediaKind.VIDEO
         activeMediaUri = item.uri
         if (item.kind == MediaKind.VIDEO) {
@@ -374,6 +376,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                     requestedUri = requestedUri,
                     requestedTitle = requestedTitle,
                     initialTitle = activeMediaTitle,
+                    initialArtist = activeMediaArtist,
                     initialIsVideo = activeMediaIsVideo,
                     initialUri = activeMediaUri,
                     appearance = playerAppearance,

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">OpenMediaPlayer</string>
+    <string name="app_name">AP Media Player</string>
     <string name="nav_library">Library</string>
     <string name="nav_player">Player</string>
     <string name="nav_network">Network</string>

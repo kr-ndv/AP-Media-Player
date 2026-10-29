@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -75,6 +77,7 @@ fun PlaybackScreen(
     var playbackSnapshot by remember(engine) { mutableStateOf(engine.playbackState) }
     var feedback by rememberSaveable { mutableStateOf("") }
     var currentMediaTitle by rememberSaveable { mutableStateOf("") }
+    var currentMediaIsVideo by rememberSaveable { mutableStateOf(false) }
     var videoLayout by remember { mutableStateOf<VLCVideoLayout?>(null) }
     var currentPositionMs by remember(engine) { mutableStateOf(engine.currentTimeMs) }
     var durationMs by remember(engine) { mutableStateOf(engine.durationMs) }
@@ -101,6 +104,7 @@ fun PlaybackScreen(
             }
 
             currentMediaTitle = uri.lastPathSegment?.substringAfterLast('/') ?: "Selected media"
+            currentMediaIsVideo = isVideoMedia(context, uri)
             feedback = ""
             runCatching { engine.open(uri) }
                 .onFailure {
@@ -135,6 +139,7 @@ fun PlaybackScreen(
 
         feedback = ""
         currentMediaTitle = requestedTitle ?: uri.lastPathSegment ?: "Selected media"
+        currentMediaIsVideo = isVideoMedia(context, uri)
         runCatching { engine.open(uri, autoplay = true) }
             .onFailure {
                 feedback = context.getString(
@@ -189,8 +194,8 @@ fun PlaybackScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(16f / 9f)
-                .heightIn(min = 190.dp)
+                .aspectRatio(if (currentMediaIsVideo) 16f / 9f else 1f)
+                .heightIn(min = if (currentMediaIsVideo) 190.dp else 280.dp)
                 .clip(MaterialTheme.shapes.extraLarge)
                 .background(
                     when {
@@ -222,6 +227,48 @@ fun PlaybackScreen(
                     if (videoLayout !== layout) videoLayout = layout
                 },
             )
+            if (!currentMediaIsVideo) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.88f),
+                                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.72f),
+                                    MaterialTheme.colorScheme.surfaceContainerHighest,
+                                ),
+                            ),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(104.dp),
+                            shape = RoundedCornerShape(30.dp),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.22f),
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Outlined.MusicNote,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(56.dp),
+                                )
+                            }
+                        }
+                        Text(
+                            currentMediaTitle.ifBlank { "Your music, your way" },
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                        )
+                    }
+                }
+            }
         }
 
         if (appearance.progressEnabled && durationMs > 0L) {
@@ -468,4 +515,13 @@ private object WavyPlayShape : Shape {
         }
         return Outline.Generic(path)
     }
+}
+
+
+private fun isVideoMedia(context: android.content.Context, uri: Uri): Boolean {
+    val mimeType = runCatching { context.contentResolver.getType(uri) }.getOrNull()
+    if (mimeType?.startsWith("video/", ignoreCase = true) == true) return true
+    val path = uri.lastPathSegment.orEmpty().lowercase(Locale.ROOT)
+    return listOf(".mp4", ".mkv", ".webm", ".avi", ".mov", ".m4v", ".3gp", ".ts", ".mpeg", ".mpg")
+        .any(path::endsWith)
 }

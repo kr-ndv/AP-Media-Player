@@ -1,14 +1,18 @@
 package dev.krndv.openmediaplayer.core.playback
 
+import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.util.Log
 import org.videolan.libvlc.LibVLC
 import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
 import org.videolan.libvlc.util.VLCVideoLayout
+import java.io.FileNotFoundException
+import java.io.IOException
 import java.util.concurrent.CopyOnWriteArraySet
 
 /**
@@ -18,8 +22,9 @@ import java.util.concurrent.CopyOnWriteArraySet
  * layout while visible; callers must release the engine when its owner is destroyed.
  */
 class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
+    private val appContext = context.applicationContext
     private val libVlc = LibVLC(
-        context.applicationContext,
+        appContext,
         arrayListOf("--no-drop-late-frames"),
     )
     private val mediaPlayer = MediaPlayer(libVlc)
@@ -36,6 +41,7 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
     private var currentUri: Uri? = null
 
     private var attachedVideoLayout: VLCVideoLayout? = null
+    private var activeSourceDescriptor: ParcelFileDescriptor? = null
 
     override val playbackState: PlaybackSnapshot
         get() = currentState
@@ -122,12 +128,37 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
         check(!released) { "PlaybackEngine has already been released" }
         currentUri = uri
         Log.i(TAG, "Opening media scheme=" + (uri.scheme ?: "unknown") + " autoplay=" + autoplay)
+
+        var candidateDescriptor: ParcelFileDescriptor? = null
+        var mediaInstalled = false
         try {
+            // LibVLC cannot reliably consume Android content:// URIs directly. Open the URI
+            // through Android's ContentResolver and pass LibVLC a retained fd:// location.
             mediaPlayer.stop()
-            val media = Media(libVlc, uri)
+            candidateDescriptor = openContentDescriptorIfNeeded(uri)
+            val mediaLocation = LibVlcMediaUriMapper.toMediaLocation(
+                uri.toString(),
+                candidateDescriptor?.fd,
+            )
+            val mediaUri = Uri.parse(mediaLocation)
+            Log.d(
+                TAG,
+                "Resolved media scheme=" + (uri.scheme ?: "unknown") +
+                    " libVlcScheme=" + (mediaUri.scheme ?: "unknown") +
+                    " descriptor=" + (candidateDescriptor != null),
+            )
+
+            val media = Media(libVlc, mediaUri)
             try {
                 media.setHWDecoderEnabled(true, false)
                 mediaPlayer.media = media
+
+                // Keep the descriptor open while native playback reads fd://N.
+                val previousDescriptor = activeSourceDescriptor
+                activeSourceDescriptor = candidateDescriptor
+                candidateDescriptor = null
+                mediaInstalled = true
+                closeDescriptor(previousDescriptor, "replaced")
             } finally {
                 media.release()
             }
@@ -139,6 +170,11 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
                 publishState(PlaybackSnapshot())
             }
         } catch (exception: Exception) {
+            closeDescriptor(candidateDescriptor, "failed-candidate")
+            if (!mediaInstalled) {
+                closeDescriptor(activeSourceDescriptor, "failed-open-after-stop")
+                activeSourceDescriptor = null
+            }
             Log.e(TAG, "Failed to start media scheme=" + (uri.scheme ?: "unknown"), exception)
             publishState(
                 PlaybackSnapshot(
@@ -148,6 +184,21 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
                 ),
             )
             throw exception
+        }
+    }
+
+    private fun openContentDescriptorIfNeeded(uri: Uri): ParcelFileDescriptor? {
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT) return null
+        return appContext.contentResolver.openFileDescriptor(uri, "r")
+            ?: throw FileNotFoundException("Android did not provide a descriptor for this media item.")
+    }
+
+    private fun closeDescriptor(descriptor: ParcelFileDescriptor?, reason: String) {
+        if (descriptor == null) return
+        try {
+            descriptor.close()
+        } catch (exception: IOException) {
+            Log.w(TAG, "Could not close media descriptor: reason=" + reason, exception)
         }
     }
 
@@ -213,6 +264,8 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
         currentUri = null
         stateListeners.clear()
         mediaPlayer.release()
+        closeDescriptor(activeSourceDescriptor, "release")
+        activeSourceDescriptor = null
         libVlc.release()
     }
 

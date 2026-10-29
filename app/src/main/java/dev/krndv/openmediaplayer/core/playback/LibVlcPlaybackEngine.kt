@@ -148,19 +148,19 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
             // through Android's ContentResolver and pass LibVLC a retained fd:// location.
             mediaPlayer.stop()
             candidateDescriptor = openContentDescriptorIfNeeded(uri)
-            val mediaLocation = LibVlcMediaUriMapper.toMediaLocation(
-                uri.toString(),
-                candidateDescriptor?.fd,
-            )
-            val mediaUri = Uri.parse(mediaLocation)
+            // Use LibVLC's FileDescriptor constructor for Android content URIs. Passing
+            // an fd:// location string can lose the original media metadata/extension and
+            // depends on the VLC fd access module resolving the descriptor number correctly.
+            // Keep the ParcelFileDescriptor alive until this media is replaced or released.
             Log.d(
                 TAG,
                 "Resolved media scheme=" + (uri.scheme ?: "unknown") +
-                    " libVlcScheme=" + (mediaUri.scheme ?: "unknown") +
                     " descriptor=" + (candidateDescriptor != null),
             )
 
-            val media = Media(libVlc, mediaUri)
+            val media = candidateDescriptor?.let { descriptor ->
+                Media(libVlc, descriptor.fileDescriptor)
+            } ?: Media(libVlc, uri)
             try {
                 media.setHWDecoderEnabled(true, false)
                 mediaPlayer.media = media

@@ -213,8 +213,8 @@ fun PlaybackScreen(
 
     if (currentMediaIsVideo) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -234,7 +234,7 @@ fun PlaybackScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
+                    .weight(1f)
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black),
             ) {
@@ -397,6 +397,8 @@ fun PlaybackScreen(
                 }
 
                 if (durationMs > 0L) {
+                    val audioProgressTrack = MaterialTheme.colorScheme.surfaceVariant
+                    val audioProgressActive = MaterialTheme.colorScheme.primary
                     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Canvas(
                             modifier = Modifier.fillMaxWidth().height(28.dp)
@@ -415,9 +417,9 @@ fun PlaybackScreen(
                             val width = size.width
                             val fraction = (currentPositionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
                             val y = size.height / 2f
-                            drawLine(MaterialTheme.colorScheme.surfaceVariant, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(width, y), strokeWidth = 3.dp.toPx())
-                            drawLine(MaterialTheme.colorScheme.primary, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(width * fraction, y), strokeWidth = 4.dp.toPx())
-                            drawCircle(MaterialTheme.colorScheme.primary, radius = 6.dp.toPx(), center = androidx.compose.ui.geometry.Offset(width * fraction, y))
+                            drawLine(audioProgressTrack, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(width, y), strokeWidth = 3.dp.toPx())
+                            drawLine(audioProgressActive, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(width * fraction, y), strokeWidth = 4.dp.toPx())
+                            drawCircle(audioProgressActive, radius = 6.dp.toPx(), center = androidx.compose.ui.geometry.Offset(width * fraction, y))
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(formatPlayerTime(currentPositionMs), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

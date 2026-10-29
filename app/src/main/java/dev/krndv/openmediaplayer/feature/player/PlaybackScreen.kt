@@ -450,6 +450,7 @@ fun PlaybackScreen(
                             feedback = context.getString(R.string.player_invalid_url)
                         } else {
                             currentMediaTitle = value
+                            currentMediaIsVideo = isVideoMedia(context, uri)
                             feedback = ""
                             runCatching { engine.open(uri) }
                                 .onFailure {

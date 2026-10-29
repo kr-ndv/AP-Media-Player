@@ -7,6 +7,8 @@ import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Home
@@ -386,6 +390,92 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                         }
                     }
 
+                    if (destination == MediaDestination.LIBRARY || destination == MediaDestination.MUSIC ||
+                        destination == MediaDestination.VIDEOS
+                    ) {
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = if (destination == MediaDestination.VIDEOS) "Recent videos" else "Recently added",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Text(
+                                        text = "See all",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    visibleItems.take(8).forEachIndexed { index, media ->
+                                        Column(
+                                            modifier = Modifier.width(126.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(126.dp)
+                                                    .clip(RoundedCornerShape(22.dp))
+                                                    .background(
+                                                        Brush.linearGradient(
+                                                            listOf(
+                                                                when (index % 4) {
+                                                                    0 -> MaterialTheme.colorScheme.primaryContainer
+                                                                    1 -> MaterialTheme.colorScheme.tertiaryContainer
+                                                                    2 -> MaterialTheme.colorScheme.secondaryContainer
+                                                                    else -> MaterialTheme.colorScheme.surfaceContainerHighest
+                                                                },
+                                                                MaterialTheme.colorScheme.surfaceContainer,
+                                                            ),
+                                                        ),
+                                                    ),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (media.kind == MediaKind.AUDIO) Icons.Outlined.MusicNote else Icons.Outlined.Movie,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(42.dp),
+                                                    tint = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                                FilledTonalIconButton(
+                                                    onClick = { playMedia(media) },
+                                                    modifier = Modifier.align(Alignment.BottomEnd).padding(7.dp).size(34.dp),
+                                                ) {
+                                                    Icon(Icons.Outlined.PlayArrow, contentDescription = "Play ${media.title}")
+                                                }
+                                            }
+                                            Text(
+                                                media.title,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.SemiBold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                            Text(
+                                                text = media.artist.orEmpty().ifBlank {
+                                                    if (media.kind == MediaKind.VIDEO) "Video" else "On this device"
+                                                },
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -394,9 +484,9 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = when (destination) {
-                                        MediaDestination.MUSIC -> "Audio files"
-                                        MediaDestination.VIDEOS -> "Video files"
-                                        else -> "Recently added"
+                                        MediaDestination.MUSIC -> "All songs"
+                                        MediaDestination.VIDEOS -> "All videos"
+                                        else -> "Your library"
                                     },
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.SemiBold,
@@ -643,27 +733,27 @@ private fun MediaItemCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Surface(
-                modifier = Modifier.size(58.dp),
-                shape = RoundedCornerShape(18.dp),
-                color = if (item.kind == MediaKind.AUDIO) {
-                    MaterialTheme.colorScheme.tertiaryContainer
-                } else {
-                    MaterialTheme.colorScheme.secondaryContainer
-                },
-                contentColor = if (item.kind == MediaKind.AUDIO) {
-                    MaterialTheme.colorScheme.onTertiaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSecondaryContainer
-                },
+            Box(
+                modifier = Modifier
+                    .size(62.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                if (item.kind == MediaKind.AUDIO) MaterialTheme.colorScheme.tertiaryContainer
+                                else MaterialTheme.colorScheme.primaryContainer,
+                                MaterialTheme.colorScheme.surfaceContainerHighest,
+                            ),
+                        ),
+                    ),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = if (item.kind == MediaKind.AUDIO) Icons.Outlined.MusicNote else Icons.Outlined.Movie,
-                        contentDescription = null,
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
+                Icon(
+                    imageVector = if (item.kind == MediaKind.AUDIO) Icons.Outlined.MusicNote else Icons.Outlined.Movie,
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
             }
             Column(
                 modifier = Modifier.weight(1f),

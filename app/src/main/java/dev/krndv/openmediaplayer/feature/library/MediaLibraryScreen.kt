@@ -38,6 +38,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -172,7 +173,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                 title = {
                     Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                         Text(
-                            text = "OpenMediaPlayer",
+                            text = "AP Media Player",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -194,7 +195,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                 ),
             )
         },
@@ -264,7 +265,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                             text = when (destination) {
                                 MediaDestination.MUSIC -> "Albums, songs, recordings and spoken audio on this device."
                                 MediaDestination.VIDEOS -> "Clips, films and shows already stored on your device."
-                                else -> "A private library for the audio and video already on your phone."
+                                else -> "Music. Video. Yours. A private library for the media already on your phone."
                             },
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -337,6 +338,29 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                             shape = MaterialTheme.shapes.extraLarge,
                         )
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            FilterChip(
+                                selected = destination == MediaDestination.LIBRARY,
+                                onClick = { selectedDestinationName = MediaDestination.LIBRARY.name },
+                                label = { Text("All") },
+                            )
+                            FilterChip(
+                                selected = destination == MediaDestination.MUSIC,
+                                onClick = { selectedDestinationName = MediaDestination.MUSIC.name },
+                                label = { Text("Music") },
+                            )
+                            FilterChip(
+                                selected = destination == MediaDestination.VIDEOS,
+                                onClick = { selectedDestinationName = MediaDestination.VIDEOS.name },
+                                label = { Text("Videos") },
+                            )
+                        }
                     }
 
                     item {

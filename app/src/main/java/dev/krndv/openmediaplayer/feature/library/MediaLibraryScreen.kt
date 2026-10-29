@@ -8,6 +8,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -545,6 +546,54 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                         }
                     }
 
+                    if (destination == MediaDestination.LIBRARY) {
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text(
+                                    "Quick picks",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                val latestAudio = mediaItems.firstOrNull { it.kind == MediaKind.AUDIO }
+                                val latestVideo = mediaItems.firstOrNull { it.kind == MediaKind.VIDEO }
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    QuickPickCard(
+                                        modifier = Modifier.weight(1f),
+                                        title = "Music library",
+                                        subtitle = "${mediaItems.count { it.kind == MediaKind.AUDIO }} songs",
+                                        icon = Icons.Outlined.MusicNote,
+                                        onClick = { selectedDestinationName = MediaDestination.MUSIC.name },
+                                    )
+                                    QuickPickCard(
+                                        modifier = Modifier.weight(1f),
+                                        title = "Video library",
+                                        subtitle = "${mediaItems.count { it.kind == MediaKind.VIDEO }} videos",
+                                        icon = Icons.Outlined.Movie,
+                                        onClick = { selectedDestinationName = MediaDestination.VIDEOS.name },
+                                    )
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    QuickPickCard(
+                                        modifier = Modifier.weight(1f),
+                                        title = "Play latest song",
+                                        subtitle = latestAudio?.title ?: "No audio found",
+                                        icon = Icons.Outlined.PlayCircle,
+                                        enabled = latestAudio != null,
+                                        onClick = { latestAudio?.let(playMedia) },
+                                    )
+                                    QuickPickCard(
+                                        modifier = Modifier.weight(1f),
+                                        title = "Play latest video",
+                                        subtitle = latestVideo?.title ?: "No video found",
+                                        icon = Icons.Outlined.Movie,
+                                        enabled = latestVideo != null,
+                                        onClick = { latestVideo?.let(playMedia) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -593,6 +642,57 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickPickCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = modifier.clickable(enabled = enabled, onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Surface(
+                modifier = Modifier.size(38.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null)
+                }
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }

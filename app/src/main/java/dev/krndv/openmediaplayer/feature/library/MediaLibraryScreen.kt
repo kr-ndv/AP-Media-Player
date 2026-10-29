@@ -376,6 +376,13 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                         activeMediaTitle = title
                         activeMediaIsVideo = isVideo
                     },
+                    onExitPlayer = {
+                        requestedUri = null
+                        requestedTitle = null
+                        selectedDestinationName = MediaDestination.entries
+                            .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
+                            ?.name ?: MediaDestination.LIBRARY.name
+                    },
                 )
             }
         } else {

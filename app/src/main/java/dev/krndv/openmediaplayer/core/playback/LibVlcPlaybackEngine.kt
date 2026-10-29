@@ -46,6 +46,18 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
     override val playbackState: PlaybackSnapshot
         get() = currentState
 
+    val currentTimeMs: Long
+        get() = if (released) 0L else mediaPlayer.time.coerceAtLeast(0L)
+
+    val durationMs: Long
+        get() = if (released) 0L else mediaPlayer.length.coerceAtLeast(0L)
+
+    @Synchronized
+    fun seekTo(positionMs: Long) {
+        if (released || durationMs <= 0L) return
+        mediaPlayer.time = positionMs.coerceIn(0L, durationMs)
+    }
+
     private val playerEventListener = MediaPlayer.EventListener { event ->
         val uriScheme = currentUri?.scheme ?: "unknown"
         when (event.type) {

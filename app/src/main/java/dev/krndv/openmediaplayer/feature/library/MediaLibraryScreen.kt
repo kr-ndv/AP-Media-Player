@@ -35,6 +35,8 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Pause
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
@@ -58,6 +60,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -74,6 +77,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import dev.krndv.openmediaplayer.core.playback.LibVlcPlaybackEngine
+import dev.krndv.openmediaplayer.core.playback.PlaybackSnapshot
+import dev.krndv.openmediaplayer.core.playback.PlaybackStateListener
+import dev.krndv.openmediaplayer.core.playback.PlaybackStatus
 import dev.krndv.openmediaplayer.feature.player.PlaybackScreen
 import dev.krndv.openmediaplayer.feature.player.PlayerAppearance
 import dev.krndv.openmediaplayer.feature.player.PlayerAppearanceSettingsScreen
@@ -113,10 +119,19 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var requestedUri by remember { mutableStateOf<Uri?>(null) }
     var requestedTitle by remember { mutableStateOf<String?>(null) }
+    var activeMediaTitle by rememberSaveable { mutableStateOf("") }
+    var activeMediaIsVideo by rememberSaveable { mutableStateOf(false) }
+    var playbackSnapshot by remember(engine) { mutableStateOf(engine.playbackState) }
     var playerAppearance by remember(context) { mutableStateOf(PlayerAppearance.load(context)) }
     val updatePlayerAppearance: (PlayerAppearance) -> Unit = { updated ->
         playerAppearance = updated
         updated.save(context)
+    }
+
+    DisposableEffect(engine) {
+        val listener = PlaybackStateListener { playbackSnapshot = it }
+        engine.addPlaybackStateListener(listener)
+        onDispose { engine.removePlaybackStateListener(listener) }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -177,14 +192,22 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     }
 
     val playMedia: (LocalMediaItem) -> Unit = { item ->
-        requestedUri = item.uri
-        requestedTitle = item.title
-        selectedDestinationName = MediaDestination.PLAYER.name
+        activeMediaTitle = item.title
+        activeMediaIsVideo = item.kind == MediaKind.VIDEO
+        if (item.kind == MediaKind.VIDEO) {
+            requestedUri = item.uri
+            requestedTitle = item.title
+            selectedDestinationName = MediaDestination.PLAYER.name
+        } else {
+            requestedUri = null
+            requestedTitle = null
+            runCatching { engine.open(item.uri, autoplay = true) }
+        }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            if (!destination.isPlayer) TopAppBar(
                 title = {
                     Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                         Text(
@@ -215,14 +238,75 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
             )
         },
         bottomBar = {
-            NavigationBar {
-                MediaDestination.entries.forEach { item ->
-                    NavigationBarItem(
-                        selected = destination == item,
-                        onClick = { selectedDestinationName = item.name },
-                        icon = { Icon(item.icon, contentDescription = null) },
-                        label = { Text(item.label, maxLines = 1) },
-                    )
+            if (!destination.isPlayer) {
+                Column {
+                    if (activeMediaTitle.isNotBlank() &&
+                        playbackSnapshot.status !in setOf(PlaybackStatus.IDLE, PlaybackStatus.ERROR)
+                    ) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            tonalElevation = 3.dp,
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Surface(
+                                    modifier = Modifier.size(42.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            if (activeMediaIsVideo) Icons.Outlined.Movie else Icons.Outlined.MusicNote,
+                                            contentDescription = null,
+                                        )
+                                    }
+                                }
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                                ) {
+                                    Text(
+                                        activeMediaTitle,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Text(
+                                        if (playbackSnapshot.status == PlaybackStatus.PLAYING) "Now playing" else "Paused",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                IconButton(onClick = {
+                                    if (playbackSnapshot.status == PlaybackStatus.PLAYING) engine.pause() else engine.play()
+                                }) {
+                                    Icon(
+                                        if (playbackSnapshot.status == PlaybackStatus.PLAYING) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
+                                        contentDescription = if (playbackSnapshot.status == PlaybackStatus.PLAYING) "Pause" else "Play",
+                                    )
+                                }
+                                IconButton(onClick = { selectedDestinationName = MediaDestination.PLAYER.name }) {
+                                    Icon(Icons.Outlined.PlayCircle, contentDescription = "Expand player")
+                                }
+                            }
+                        }
+                    }
+                    NavigationBar {
+                        MediaDestination.entries.filterNot { it.isPlayer }.forEach { item ->
+                            NavigationBarItem(
+                                selected = destination == item,
+                                onClick = { selectedDestinationName = item.name },
+                                icon = { Icon(item.icon, contentDescription = null) },
+                                label = { Text(item.label, maxLines = 1) },
+                            )
+                        }
+                    }
                 }
             }
         },
@@ -245,16 +329,33 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                     .fillMaxSize()
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 18.dp, vertical = 18.dp),
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = {
+                        requestedUri = null
+                        requestedTitle = null
+                        selectedDestinationName = MediaDestination.LIBRARY.name
+                    }) {
+                        Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to library")
+                    }
+                    Text("Now Playing", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                }
                 PlaybackScreen(
                     engine = engine,
                     requestedUri = requestedUri,
                     requestedTitle = requestedTitle,
+                    initialTitle = activeMediaTitle,
+                    initialIsVideo = activeMediaIsVideo,
                     appearance = playerAppearance,
                     onRequestConsumed = {
                         requestedUri = null
                         requestedTitle = null
+                    },
+                    onMediaChanged = { title, isVideo ->
+                        activeMediaTitle = title
+                        activeMediaIsVideo = isVideo
                     },
                 )
             }

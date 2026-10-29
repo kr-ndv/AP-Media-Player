@@ -1,6 +1,9 @@
 package dev.krndv.openmediaplayer.feature.player
 
 import android.app.Activity
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -9,6 +12,7 @@ import android.widget.FrameLayout
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,12 +71,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.drawscope.Stroke
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.viewinterop.AndroidView
 import dev.krndv.openmediaplayer.R
 import dev.krndv.openmediaplayer.core.design.tokens.FamilySpacing
@@ -90,6 +98,7 @@ fun PlaybackScreen(
     requestedTitle: String? = null,
     initialTitle: String = "",
     initialIsVideo: Boolean = false,
+    initialUri: Uri? = null,
     appearance: PlayerAppearance = PlayerAppearance(),
     onRequestConsumed: () -> Unit = {},
     onMediaChanged: (title: String, isVideo: Boolean) -> Unit = { _, _ -> },
@@ -101,6 +110,8 @@ fun PlaybackScreen(
     var feedback by rememberSaveable { mutableStateOf("") }
     var currentMediaTitle by remember(engine, initialTitle) { mutableStateOf(initialTitle) }
     var currentMediaIsVideo by remember(engine, initialIsVideo) { mutableStateOf(initialIsVideo) }
+    var currentMediaUri by remember(engine, initialUri) { mutableStateOf(initialUri) }
+    var artworkBitmap by remember(currentMediaUri, currentMediaIsVideo) { mutableStateOf<Bitmap?>(null) }
     var videoLayout by remember { mutableStateOf<VLCVideoLayout?>(null) }
     var currentPositionMs by remember(engine) { mutableStateOf(engine.currentTimeMs) }
     var durationMs by remember(engine) { mutableStateOf(engine.durationMs) }
@@ -108,6 +119,26 @@ fun PlaybackScreen(
     var isFavorite by rememberSaveable { mutableStateOf(false) }
     var shuffleEnabled by rememberSaveable { mutableStateOf(false) }
     var repeatEnabled by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(currentMediaUri, currentMediaIsVideo) {
+        val uri = currentMediaUri
+        artworkBitmap = if (uri == null) null else withContext(Dispatchers.IO) {
+            runCatching {
+                MediaMetadataRetriever().let { retriever ->
+                    try {
+                        retriever.setDataSource(context, uri)
+                        if (currentMediaIsVideo) {
+                            retriever.getFrameAtTime(0L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                        } else {
+                            retriever.embeddedPicture?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
+                        }
+                    } finally {
+                        retriever.release()
+                    }
+                }
+            }.getOrNull()
+        }
+    }
 
     LaunchedEffect(engine, playbackSnapshot.status) {
         while (true) {
@@ -131,6 +162,7 @@ fun PlaybackScreen(
             }
 
             currentMediaTitle = uri.lastPathSegment?.substringAfterLast('/') ?: "Selected media"
+            currentMediaUri = uri
             currentMediaIsVideo = isVideoMedia(context, uri)
             onMediaChanged(currentMediaTitle, currentMediaIsVideo)
             feedback = ""
@@ -188,6 +220,7 @@ fun PlaybackScreen(
 
         feedback = ""
         currentMediaTitle = requestedTitle ?: uri.lastPathSegment ?: "Selected media"
+        currentMediaUri = uri
         currentMediaIsVideo = isVideoMedia(context, uri)
         onMediaChanged(currentMediaTitle, currentMediaIsVideo)
         runCatching { engine.open(uri, autoplay = true) }
@@ -357,22 +390,32 @@ fun PlaybackScreen(
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        Surface(
-                            modifier = Modifier.size(112.dp),
-                            shape = RoundedCornerShape(34.dp),
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.20f),
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Outlined.MusicNote, contentDescription = null, modifier = Modifier.size(60.dp))
-                            }
-                        }
-                        Text(
-                            "AP MEDIA PLAYER",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.88f),
+                    val artwork = artworkBitmap
+                    if (artwork != null) {
+                        Image(
+                            bitmap = artwork.asImageBitmap(),
+                            contentDescription = "Artwork for ${currentMediaTitle.ifBlank { "current track" }}",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
                         )
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                            Surface(
+                                modifier = Modifier.size(112.dp),
+                                shape = RoundedCornerShape(34.dp),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.20f),
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Outlined.MusicNote, contentDescription = null, modifier = Modifier.size(60.dp))
+                                }
+                            }
+                            Text(
+                                "AP MEDIA PLAYER",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.88f),
+                            )
+                        }
                     }
                 }
 
@@ -519,6 +562,7 @@ fun PlaybackScreen(
                                     feedback = context.getString(R.string.player_invalid_url)
                                 } else {
                                     currentMediaTitle = value
+                                    currentMediaUri = uri
                                     currentMediaIsVideo = isVideoMedia(context, uri)
                                     onMediaChanged(currentMediaTitle, currentMediaIsVideo)
                                     feedback = ""

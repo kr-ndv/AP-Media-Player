@@ -386,6 +386,20 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                             .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
                             ?.name ?: MediaDestination.LIBRARY.name
                     },
+                    onPreviousTrack = {
+                        val audioQueue = mediaItems.filter { it.kind == MediaKind.AUDIO }
+                        if (audioQueue.isNotEmpty()) {
+                            val index = audioQueue.indexOfFirst { it.uri == activeMediaUri }
+                            playMedia(audioQueue[if (index <= 0) audioQueue.lastIndex else index - 1])
+                        }
+                    },
+                    onNextTrack = {
+                        val audioQueue = mediaItems.filter { it.kind == MediaKind.AUDIO }
+                        if (audioQueue.isNotEmpty()) {
+                            val index = audioQueue.indexOfFirst { it.uri == activeMediaUri }
+                            playMedia(audioQueue[if (index < 0 || index == audioQueue.lastIndex) 0 else index + 1])
+                        }
+                    },
                 )
             }
         } else {

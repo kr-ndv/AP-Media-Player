@@ -99,6 +99,7 @@ fun PlaybackScreen(
     requestedUri: Uri? = null,
     requestedTitle: String? = null,
     initialTitle: String = "",
+    initialArtist: String = "",
     initialIsVideo: Boolean = false,
     initialUri: Uri? = null,
     appearance: PlayerAppearance = PlayerAppearance(),
@@ -113,6 +114,7 @@ fun PlaybackScreen(
     var playbackSnapshot by remember(engine) { mutableStateOf(engine.playbackState) }
     var feedback by rememberSaveable { mutableStateOf("") }
     var currentMediaTitle by remember(engine, initialTitle) { mutableStateOf(initialTitle) }
+    var currentMediaArtist by remember(engine, initialArtist) { mutableStateOf(initialArtist) }
     var currentMediaIsVideo by remember(engine, initialIsVideo) { mutableStateOf(initialIsVideo) }
     var currentMediaUri by remember(engine, initialUri) { mutableStateOf(initialUri) }
     var artworkBitmap by remember(currentMediaUri, currentMediaIsVideo) { mutableStateOf<Bitmap?>(null) }
@@ -166,6 +168,7 @@ fun PlaybackScreen(
             }
 
             currentMediaTitle = uri.lastPathSegment?.substringAfterLast('/') ?: "Selected media"
+            currentMediaArtist = "On this device"
             currentMediaUri = uri
             currentMediaIsVideo = isVideoMedia(context, uri)
             onMediaChanged(currentMediaTitle, currentMediaIsVideo)
@@ -224,6 +227,7 @@ fun PlaybackScreen(
 
         feedback = ""
         currentMediaTitle = requestedTitle ?: uri.lastPathSegment ?: "Selected media"
+        currentMediaArtist = initialArtist
         currentMediaUri = uri
         currentMediaIsVideo = isVideoMedia(context, uri)
         onMediaChanged(currentMediaTitle, currentMediaIsVideo)
@@ -435,7 +439,7 @@ fun PlaybackScreen(
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 2,
                         )
-                        Text("On this device", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(currentMediaArtist.ifBlank { "On this device" }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(onClick = { isFavorite = !isFavorite }) {
                         Icon(
@@ -566,6 +570,7 @@ fun PlaybackScreen(
                                     feedback = context.getString(R.string.player_invalid_url)
                                 } else {
                                     currentMediaTitle = value
+                                    currentMediaArtist = "Network stream"
                                     currentMediaUri = uri
                                     currentMediaIsVideo = isVideoMedia(context, uri)
                                     onMediaChanged(currentMediaTitle, currentMediaIsVideo)

@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -51,10 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawLine
-import androidx.compose.ui.graphics.drawscope.drawPath
 import kotlinx.coroutines.delay
 import androidx.compose.ui.viewinterop.AndroidView
 import dev.krndv.openmediaplayer.R

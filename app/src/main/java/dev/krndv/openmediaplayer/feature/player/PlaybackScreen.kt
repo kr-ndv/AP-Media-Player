@@ -71,15 +71,18 @@ fun PlaybackScreen(
     engine: LibVlcPlaybackEngine,
     requestedUri: Uri? = null,
     requestedTitle: String? = null,
+    initialTitle: String = "",
+    initialIsVideo: Boolean = false,
     appearance: PlayerAppearance = PlayerAppearance(),
     onRequestConsumed: () -> Unit = {},
+    onMediaChanged: (title: String, isVideo: Boolean) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
     var streamUrl by rememberSaveable { mutableStateOf("") }
     var playbackSnapshot by remember(engine) { mutableStateOf(engine.playbackState) }
     var feedback by rememberSaveable { mutableStateOf("") }
-    var currentMediaTitle by rememberSaveable { mutableStateOf("") }
-    var currentMediaIsVideo by rememberSaveable { mutableStateOf(false) }
+    var currentMediaTitle by remember(engine, initialTitle) { mutableStateOf(initialTitle) }
+    var currentMediaIsVideo by remember(engine, initialIsVideo) { mutableStateOf(initialIsVideo) }
     var videoLayout by remember { mutableStateOf<VLCVideoLayout?>(null) }
     var currentPositionMs by remember(engine) { mutableStateOf(engine.currentTimeMs) }
     var durationMs by remember(engine) { mutableStateOf(engine.durationMs) }
@@ -107,6 +110,7 @@ fun PlaybackScreen(
 
             currentMediaTitle = uri.lastPathSegment?.substringAfterLast('/') ?: "Selected media"
             currentMediaIsVideo = isVideoMedia(context, uri)
+            onMediaChanged(currentMediaTitle, currentMediaIsVideo)
             feedback = ""
             runCatching { engine.open(uri) }
                 .onFailure {
@@ -142,6 +146,7 @@ fun PlaybackScreen(
         feedback = ""
         currentMediaTitle = requestedTitle ?: uri.lastPathSegment ?: "Selected media"
         currentMediaIsVideo = isVideoMedia(context, uri)
+        onMediaChanged(currentMediaTitle, currentMediaIsVideo)
         runCatching { engine.open(uri, autoplay = true) }
             .onFailure {
                 feedback = context.getString(
@@ -389,7 +394,7 @@ fun PlaybackScreen(
             }
         }
 
-        Card(
+        if (currentMediaTitle.isBlank()) Card(
             shape = MaterialTheme.shapes.extraLarge,
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -417,7 +422,7 @@ fun PlaybackScreen(
             }
         }
 
-        Card(
+        if (currentMediaTitle.isBlank()) Card(
             shape = MaterialTheme.shapes.extraLarge,
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -453,6 +458,7 @@ fun PlaybackScreen(
                         } else {
                             currentMediaTitle = value
                             currentMediaIsVideo = isVideoMedia(context, uri)
+                            onMediaChanged(currentMediaTitle, currentMediaIsVideo)
                             feedback = ""
                             runCatching { engine.open(uri) }
                                 .onFailure {

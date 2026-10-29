@@ -42,6 +42,7 @@ import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.QueueMusic
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -91,6 +92,7 @@ fun PlaybackScreen(
     appearance: PlayerAppearance = PlayerAppearance(),
     onRequestConsumed: () -> Unit = {},
     onMediaChanged: (title: String, isVideo: Boolean) -> Unit = { _, _ -> },
+    onExitPlayer: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var streamUrl by rememberSaveable { mutableStateOf("") }
@@ -220,6 +222,9 @@ fun PlaybackScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                IconButton(onClick = onExitPlayer) {
+                    Icon(Icons.Outlined.ArrowBack, contentDescription = "Exit video player", tint = Color.White)
+                }
                 Text(
                     currentMediaTitle.ifBlank { "Video player" },
                     modifier = Modifier.weight(1f),

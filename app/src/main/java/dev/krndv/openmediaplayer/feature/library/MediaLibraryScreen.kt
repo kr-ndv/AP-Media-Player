@@ -79,7 +79,7 @@ private enum class MediaDestination(
     val kind: MediaKind? = null,
     val isPlayer: Boolean = false,
 ) {
-    LIBRARY("Library", Icons.Outlined.Home),
+    LIBRARY("Home", Icons.Outlined.Home),
     MUSIC("Music", Icons.Outlined.MusicNote, MediaKind.AUDIO),
     VIDEOS("Videos", Icons.Outlined.Movie, MediaKind.VIDEO),
     PLAYER("Player", Icons.Outlined.PlayCircle, isPlayer = true),

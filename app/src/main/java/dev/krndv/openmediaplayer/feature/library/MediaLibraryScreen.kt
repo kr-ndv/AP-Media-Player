@@ -2,6 +2,9 @@ package dev.krndv.openmediaplayer.feature.library
 
 import android.Manifest
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -9,6 +12,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +35,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Home
@@ -554,12 +560,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                                                     ),
                                                 contentAlignment = Alignment.Center,
                                             ) {
-                                                Icon(
-                                                    imageVector = if (media.kind == MediaKind.AUDIO) Icons.Outlined.MusicNote else Icons.Outlined.Movie,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(42.dp),
-                                                    tint = MaterialTheme.colorScheme.onSurface,
-                                                )
+                                                MediaArtwork(media, Modifier.fillMaxSize())
                                                 FilledTonalIconButton(
                                                     onClick = { playMedia(media) },
                                                     modifier = Modifier.align(Alignment.BottomEnd).padding(7.dp).size(34.dp),
@@ -927,6 +928,53 @@ private fun EmptyLibraryCard(
 }
 
 @Composable
+private fun MediaArtwork(
+    item: LocalMediaItem,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    var bitmap by remember(item.uri) { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(item.uri, item.kind) {
+        bitmap = withContext(Dispatchers.IO) {
+            runCatching {
+                MediaMetadataRetriever().let { retriever ->
+                    try {
+                        retriever.setDataSource(context, item.uri)
+                        if (item.kind == MediaKind.VIDEO) {
+                            retriever.getFrameAtTime(0L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                        } else {
+                            retriever.embeddedPicture?.let { bytes ->
+                                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                            }
+                        }
+                    } finally {
+                        retriever.release()
+                    }
+                }
+            }.getOrNull()
+        }
+    }
+    val art = bitmap
+    if (art != null) {
+        Image(
+            bitmap = art.asImageBitmap(),
+            contentDescription = "${item.title} artwork",
+            modifier = modifier,
+            contentScale = ContentScale.Crop,
+        )
+    } else {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = if (item.kind == MediaKind.AUDIO) Icons.Outlined.MusicNote else Icons.Outlined.Movie,
+                contentDescription = null,
+                modifier = Modifier.size(30.dp),
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
 private fun MediaItemCard(
     item: LocalMediaItem,
     onClick: () -> Unit,
@@ -961,12 +1009,7 @@ private fun MediaItemCard(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = if (item.kind == MediaKind.AUDIO) Icons.Outlined.MusicNote else Icons.Outlined.Movie,
-                    contentDescription = null,
-                    modifier = Modifier.size(28.dp),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
+                MediaArtwork(item, Modifier.fillMaxSize())
             }
             Column(
                 modifier = Modifier.weight(1f),

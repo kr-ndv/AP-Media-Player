@@ -228,6 +228,8 @@ fun PlaybackScreen(
         }
 
         if (appearance.progressEnabled && durationMs > 0L) {
+            val progressTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            val progressActiveColor = MaterialTheme.colorScheme.primary
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Canvas(
                     modifier = Modifier
@@ -253,8 +255,8 @@ fun PlaybackScreen(
                     val centerY = size.height / 2f
                     val fraction = (currentPositionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
                     val activeWidth = width * fraction
-                    val track = MaterialTheme.colorScheme.surfaceVariant
-                    val active = MaterialTheme.colorScheme.primary
+                    val track = progressTrackColor
+                    val active = progressActiveColor
                     val stroke = when (appearance.progressStyle) {
                         ProgressStyle.BAR -> 8.dp.toPx()
                         ProgressStyle.SLIM -> 2.dp.toPx()

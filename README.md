@@ -1,8 +1,8 @@
-# OpenMediaPlayer
+# AP Media Player
 
-An Android media player prototype built with Kotlin, Jetpack Compose and Material 3, with a privacy-respecting, local-first product direction.
+**AP Media Player** is an open-source Android media player by **Avarta Pravaha**, built with Kotlin, Jetpack Compose and Material 3 Expressive. It is designed around a clean, local-first experience for browsing and playing music and videos on your device.
 
-**Current stage:** local MediaStore discovery and a LibVLC playback path are implemented, but playback still needs validation on real Android devices and the app is not ready for daily use.
+> **Project status:** Early prototype. Local MediaStore discovery and a LibVLC playback path are implemented, but playback still needs validation on real Android devices. The app is not ready for daily use.
 
 ## Product direction
 

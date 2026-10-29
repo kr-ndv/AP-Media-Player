@@ -5,6 +5,7 @@ import android.net.Uri
 import android.widget.FrameLayout
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +16,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -39,6 +51,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawLine
+import androidx.compose.ui.graphics.drawscope.drawPath
+import kotlinx.coroutines.delay
 import androidx.compose.ui.viewinterop.AndroidView
 import dev.krndv.openmediaplayer.R
 import dev.krndv.openmediaplayer.core.design.tokens.FamilySpacing
@@ -54,6 +71,7 @@ fun PlaybackScreen(
     engine: LibVlcPlaybackEngine,
     requestedUri: Uri? = null,
     requestedTitle: String? = null,
+    appearance: PlayerAppearance = PlayerAppearance(),
     onRequestConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -62,6 +80,16 @@ fun PlaybackScreen(
     var feedback by rememberSaveable { mutableStateOf("") }
     var currentMediaTitle by rememberSaveable { mutableStateOf("") }
     var videoLayout by remember { mutableStateOf<VLCVideoLayout?>(null) }
+    var currentPositionMs by remember(engine) { mutableStateOf(engine.currentTimeMs) }
+    var durationMs by remember(engine) { mutableStateOf(engine.durationMs) }
+
+    LaunchedEffect(engine, playbackSnapshot.status) {
+        while (true) {
+            currentPositionMs = engine.currentTimeMs
+            durationMs = engine.durationMs
+            delay(if (playbackSnapshot.status == PlaybackStatus.PLAYING) 350L else 900L)
+        }
+    }
 
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -168,7 +196,18 @@ fun PlaybackScreen(
                 .aspectRatio(16f / 9f)
                 .heightIn(min = 190.dp)
                 .clip(MaterialTheme.shapes.extraLarge)
-                .background(Color.Black),
+                .background(
+                    when {
+                        !appearance.backgroundEnabled -> Brush.linearGradient(listOf(Color.Black, Color.Black))
+                        appearance.backgroundStyle == PlayerBackgroundStyle.SOLID ->
+                            Brush.linearGradient(listOf(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.surfaceVariant))
+                        appearance.backgroundStyle == PlayerBackgroundStyle.GRADIENT ->
+                            Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.tertiaryContainer))
+                        else -> Brush.radialGradient(
+                            listOf(MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.primary, Color.Black),
+                        )
+                    },
+                ),
         ) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
@@ -188,12 +227,73 @@ fun PlaybackScreen(
             )
         }
 
+        if (appearance.progressEnabled && durationMs > 0L) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(32.dp)
+                        .pointerInput(durationMs) {
+                            detectTapGestures { point ->
+                                if (size.width > 0) {
+                                    engine.seekTo((point.x / size.width * durationMs).toLong())
+                                }
+                            }
+                        }
+                        .pointerInput(durationMs) {
+                            detectDragGestures { change, _ ->
+                                change.consume()
+                                if (size.width > 0) {
+                                    engine.seekTo((change.position.x / size.width * durationMs).toLong())
+                                }
+                            }
+                        },
+                ) {
+                    val width = size.width
+                    val centerY = size.height / 2f
+                    val fraction = (currentPositionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
+                    val activeWidth = width * fraction
+                    val track = MaterialTheme.colorScheme.surfaceVariant
+                    val active = MaterialTheme.colorScheme.primary
+                    val stroke = when (appearance.progressStyle) {
+                        ProgressStyle.BAR -> 8.dp.toPx()
+                        ProgressStyle.SLIM -> 2.dp.toPx()
+                        ProgressStyle.WAVY -> 4.dp.toPx()
+                        ProgressStyle.SQUIGGLY -> 3.dp.toPx()
+                    }
+                    if (appearance.progressStyle == ProgressStyle.BAR || appearance.progressStyle == ProgressStyle.SLIM) {
+                        drawLine(track, androidx.compose.ui.geometry.Offset(0f, centerY), androidx.compose.ui.geometry.Offset(width, centerY), strokeWidth = stroke)
+                        drawLine(active, androidx.compose.ui.geometry.Offset(0f, centerY), androidx.compose.ui.geometry.Offset(activeWidth, centerY), strokeWidth = stroke)
+                    } else {
+                        val wave = Path()
+                        val activeWave = Path()
+                        val cycles = if (appearance.progressStyle == ProgressStyle.WAVY) 3.5f else 10f
+                        val amplitude = if (appearance.progressStyle == ProgressStyle.WAVY) 4.dp.toPx() else 2.dp.toPx()
+                        for (x in 0..width.toInt().coerceAtLeast(1) step 2) {
+                            val y = centerY + kotlin.math.sin(x / width.coerceAtLeast(1f) * cycles * 2f * Math.PI).toFloat() * amplitude
+                            if (x == 0) wave.moveTo(x.toFloat(), y) else wave.lineTo(x.toFloat(), y)
+                            if (x <= activeWidth.toInt()) {
+                                if (x == 0) activeWave.moveTo(x.toFloat(), y) else activeWave.lineTo(x.toFloat(), y)
+                            }
+                        }
+                        drawPath(wave, track, style = Stroke(width = stroke))
+                        drawPath(activeWave, active, style = Stroke(width = stroke))
+                    }
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(formatPlayerTime(currentPositionMs), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatPlayerTime(durationMs), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(FamilySpacing.medium),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Button(
+                shape = if (appearance.wavyPlayPauseEnabled) WavyPlayShape else MaterialTheme.shapes.extraLarge,
                 onClick = {
                     feedback = ""
                     runCatching {
@@ -341,5 +441,32 @@ fun PlaybackScreen(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+private fun formatPlayerTime(milliseconds: Long): String {
+    val seconds = (milliseconds.coerceAtLeast(0L) / 1000L).toInt()
+    return String.format(Locale.getDefault(), "%d:%02d", seconds / 60, seconds % 60)
+}
+
+private object WavyPlayShape : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: androidx.compose.ui.unit.Density,
+    ): Outline {
+        val path = Path().apply {
+            val w = size.width
+            val h = size.height
+            moveTo(w * 0.22f, 0f)
+            cubicTo(w * 0.02f, 0f, 0f, h * 0.18f, 0f, h * 0.34f)
+            cubicTo(-w * 0.02f, h * 0.62f, w * 0.08f, h, w * 0.28f, h)
+            cubicTo(w * 0.48f, h * 1.02f, w * 0.55f, h * 0.94f, w * 0.72f, h)
+            cubicTo(w * 0.92f, h * 1.02f, w, h * 0.82f, w, h * 0.62f)
+            cubicTo(w * 1.02f, h * 0.36f, w * 0.91f, h * 0.08f, w * 0.72f, h * 0.04f)
+            cubicTo(w * 0.53f, -h * 0.02f, w * 0.42f, h * 0.04f, w * 0.22f, 0f)
+            close()
+        }
+        return Outline.Generic(path)
     }
 }

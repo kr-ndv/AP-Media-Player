@@ -278,60 +278,20 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                 contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            text = when (destination) {
-                                MediaDestination.MUSIC -> "Your music"
-                                MediaDestination.VIDEOS -> "Your videos"
-                                else -> "Your media, all together."
-                            },
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = when (destination) {
-                                MediaDestination.MUSIC -> "Albums, songs, recordings and spoken audio on this device."
-                                MediaDestination.VIDEOS -> "Clips, films and shows already stored on your device."
-                                else -> "Music. Video. Yours. A private library for the media already on your phone."
-                            },
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                item {
-                    LibraryHeroCard(
-                        total = visibleItems.size,
-                        isScanning = isScanning,
-                        onRefresh = {
-                            if (canReadAudioMedia(context) || canReadVideoMedia(context)) {
-                                scanVersion += 1
-                            } else {
-                                requestMediaAccess()
-                            }
-                        },
-                    )
-                }
-
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        MediaCountCard(
-                            modifier = Modifier.weight(1f),
-                            label = "Audio",
-                            count = mediaItems.count { it.kind == MediaKind.AUDIO },
-                            icon = Icons.Outlined.MusicNote,
-                        )
-                        MediaCountCard(
-                            modifier = Modifier.weight(1f),
-                            label = "Video",
-                            count = mediaItems.count { it.kind == MediaKind.VIDEO },
-                            icon = Icons.Outlined.Movie,
-                        )
+                if (destination != MediaDestination.LIBRARY) {
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = if (destination == MediaDestination.MUSIC) "Songs" else "All videos",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Text(
+                                text = "${visibleItems.size} items on this device",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
 

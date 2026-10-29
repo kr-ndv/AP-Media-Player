@@ -113,14 +113,6 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     val destination = MediaDestination.entries.firstOrNull { it.name == selectedDestinationName }
         ?: MediaDestination.LIBRARY
 
-    BackHandler(enabled = destination.isPlayer) {
-        requestedUri = null
-        requestedTitle = null
-        selectedDestinationName = MediaDestination.entries
-            .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
-            ?.name ?: MediaDestination.LIBRARY.name
-    }
-
     var mediaItems by remember { mutableStateOf<List<LocalMediaItem>>(emptyList()) }
     var scanVersion by remember { mutableIntStateOf(-1) }
     var isScanning by remember { mutableStateOf(false) }
@@ -129,6 +121,13 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var requestedUri by remember { mutableStateOf<Uri?>(null) }
     var requestedTitle by remember { mutableStateOf<String?>(null) }
+    BackHandler(enabled = destination.isPlayer) {
+        requestedUri = null
+        requestedTitle = null
+        selectedDestinationName = MediaDestination.entries
+            .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
+            ?.name ?: MediaDestination.LIBRARY.name
+    }
     var activeMediaTitle by rememberSaveable { mutableStateOf("") }
     var activeMediaIsVideo by rememberSaveable { mutableStateOf(false) }
     var playbackSnapshot by remember(engine) { mutableStateOf(engine.playbackState) }

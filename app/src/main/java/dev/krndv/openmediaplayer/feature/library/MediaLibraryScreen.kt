@@ -384,24 +384,28 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                             .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
                             ?.name ?: MediaDestination.LIBRARY.name
                     },
-                    onPreviousTrack = { shuffle ->
-                        val audioQueue = mediaItems.filter { it.kind == MediaKind.AUDIO }
-                        if (audioQueue.isNotEmpty()) {
-                            val index = audioQueue.indexOfFirst { it.uri == activeMediaUri }
-                            val target = if (shuffle && audioQueue.size > 1) {
-                                audioQueue.indices.filter { it != index }.random()
-                            } else if (index <= 0) audioQueue.lastIndex else index - 1
-                            playMedia(audioQueue[target])
+                    onPreviousTrack = { queue, shuffle ->
+                        val available = queue.mapNotNull { entry ->
+                            mediaItems.firstOrNull { it.uri == entry.uri }
+                        }
+                        if (available.isNotEmpty()) {
+                            val index = available.indexOfFirst { it.uri == activeMediaUri }
+                            val target = if (shuffle && available.size > 1) {
+                                available.indices.filter { it != index }.random()
+                            } else if (index <= 0) available.lastIndex else index - 1
+                            playMedia(available[target])
                         }
                     },
-                    onNextTrack = { shuffle ->
-                        val audioQueue = mediaItems.filter { it.kind == MediaKind.AUDIO }
-                        if (audioQueue.isNotEmpty()) {
-                            val index = audioQueue.indexOfFirst { it.uri == activeMediaUri }
-                            val target = if (shuffle && audioQueue.size > 1) {
-                                audioQueue.indices.filter { it != index }.random()
-                            } else if (index < 0 || index == audioQueue.lastIndex) 0 else index + 1
-                            playMedia(audioQueue[target])
+                    onNextTrack = { queue, shuffle ->
+                        val available = queue.mapNotNull { entry ->
+                            mediaItems.firstOrNull { it.uri == entry.uri }
+                        }
+                        if (available.isNotEmpty()) {
+                            val index = available.indexOfFirst { it.uri == activeMediaUri }
+                            val target = if (shuffle && available.size > 1) {
+                                available.indices.filter { it != index }.random()
+                            } else if (index < 0 || index == available.lastIndex) 0 else index + 1
+                            playMedia(available[target])
                         }
                     },
                     musicQueue = mediaItems.filter { it.kind == MediaKind.AUDIO }.map { item ->

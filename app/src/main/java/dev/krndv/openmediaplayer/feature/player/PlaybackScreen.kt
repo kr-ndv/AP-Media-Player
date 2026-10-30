@@ -366,8 +366,14 @@ fun PlaybackScreen(
                     .clip(RoundedCornerShape(22.dp))
                     .background(Color.Black),
             ) {
+                var dragSeekStart by remember { mutableStateOf(0L) }
+                var dragSeekDelta by remember { mutableStateOf(0f) }
+                var gestureMode by remember { mutableStateOf("") }
+                val audioManager = remember(context) { context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager }
                 AndroidView(
-                    modifier = Modifier.fillMaxSize().pointerInput(durationMs, currentPositionMs, playbackSnapshot.status) {
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(durationMs, currentPositionMs, playbackSnapshot.status) {
                         detectTapGestures(
                             onTap = { showVideoControls = !showVideoControls },
                             onDoubleTap = { point ->
@@ -386,6 +392,57 @@ fun PlaybackScreen(
                                         videoGestureFeedback = if (wasPlaying) "Paused" else "Playing"
                                     }
                                 }
+                                showVideoControls = true
+                            },
+                        )
+                    }
+                    .pointerInput(durationMs, currentPositionMs) {
+                        detectDragGestures(
+                            onDragStart = { point ->
+                                dragSeekStart = currentPositionMs
+                                dragSeekDelta = 0f
+                                gestureMode = when {
+                                    point.x < size.width * 0.22f -> "brightness"
+                                    point.x > size.width * 0.78f -> "volume"
+                                    else -> "seek"
+                                }
+                                showVideoControls = false
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                when (gestureMode) {
+                                    "brightness" -> {
+                                        val activity = context.findActivity()
+                                        if (activity != null) {
+                                            val attributes = activity.window.attributes
+                                            val current = attributes.screenBrightness.takeIf { it >= 0f } ?: 0.5f
+                                            attributes.screenBrightness = (current - dragAmount.y / size.height).coerceIn(0.01f, 1f)
+                                            activity.window.attributes = attributes
+                                            videoGestureFeedback = "Brightness " + (attributes.screenBrightness * 100).toInt() + "%"
+                                        }
+                                    }
+                                    "volume" -> {
+                                        val maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
+                                        val current = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)
+                                        val next = (current - (dragAmount.y / size.height * maxVolume * 2f).toInt()).coerceIn(0, maxVolume)
+                                        audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, next, 0)
+                                        videoGestureFeedback = "Volume " + (if (maxVolume == 0) 0 else next * 100 / maxVolume) + "%"
+                                    }
+                                    "seek" -> {
+                                        dragSeekDelta += dragAmount.x
+                                        val target = (dragSeekStart + (dragSeekDelta / size.width * durationMs * 1.5f).toLong()).coerceIn(0L, durationMs)
+                                        engine.seekTo(target)
+                                        videoGestureFeedback = formatPlayerTime(target)
+                                    }
+                                }
+                            },
+                            onDragEnd = {
+                                if (gestureMode == "seek") videoGestureFeedback = formatPlayerTime(engine.currentTimeMs)
+                                gestureMode = ""
+                                showVideoControls = true
+                            },
+                            onDragCancel = {
+                                gestureMode = ""
                                 showVideoControls = true
                             },
                         )

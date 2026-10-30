@@ -677,51 +677,58 @@ fun MediaLibraryScreen(
                         }
                     }
 
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = when (destination) {
-                                        MediaDestination.MUSIC -> "All songs"
-                                        MediaDestination.VIDEOS -> "All videos"
-                                        else -> "Your library"
-                                    },
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Text(
-                                    text = "${visibleItems.size} item${if (visibleItems.size == 1) "" else "s"}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            if (isScanning) {
-                                CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                    if (destination != MediaDestination.LIBRARY) {
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = when (destination) {
+                                            MediaDestination.MUSIC -> "All songs"
+                                            MediaDestination.VIDEOS -> "All videos"
+                                            else -> "Your library"
+                                        },
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    Text(
+                                        text = "${visibleItems.size} item${if (visibleItems.size == 1) "" else "s"}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                if (isScanning) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                             }
                         }
-                    }
-
-                    if (!isScanning && visibleItems.isEmpty()) {
+                        if (!isScanning && visibleItems.isEmpty()) {
+                            item {
+                                EmptyLibraryCard(
+                                    title = if (searchQuery.isBlank()) "Nothing here yet" else "No matches",
+                                    description = if (searchQuery.isBlank()) {
+                                        "Media that Android can index will appear here automatically. Add a file to your device, then rescan."
+                                    } else {
+                                        "Try another title, artist or album name."
+                                    },
+                                    onRefresh = { scanVersion += 1 },
+                                )
+                            }
+                        } else {
+                            items(
+                                items = visibleItems,
+                                key = { "${it.kind.name}_${it.id}" },
+                            ) { item ->
+                                MediaItemCard(item = item, onClick = { playMedia(item) })
+                            }
+                        }
+                    } else if (!isScanning && visibleItems.isEmpty()) {
                         item {
                             EmptyLibraryCard(
-                                title = if (searchQuery.isBlank()) "Nothing here yet" else "No matches",
-                                description = if (searchQuery.isBlank()) {
-                                    "Media that Android can index will appear here automatically. Add a file to your device, then rescan."
-                                } else {
-                                    "Try another title, artist or album name."
-                                },
+                                title = if (searchQuery.isBlank()) "Your library is empty" else "No matches",
+                                description = if (searchQuery.isBlank()) "Add music or videos to your device, then scan your library." else "Try another title, artist or album name.",
                                 onRefresh = { scanVersion += 1 },
                             )
-                        }
-                    } else {
-                        items(
-                            items = visibleItems,
-                            key = { "${it.kind.name}_${it.id}" },
-                        ) { item ->
-                            MediaItemCard(item = item, onClick = { playMedia(item) })
                         }
                     }
                 }

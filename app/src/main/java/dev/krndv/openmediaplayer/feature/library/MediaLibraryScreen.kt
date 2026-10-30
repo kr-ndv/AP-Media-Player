@@ -294,16 +294,19 @@ fun MediaLibraryScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                Surface(
-                                    modifier = Modifier.size(42.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                Box(
+                                    modifier = Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.primaryContainer),
+                                    contentAlignment = Alignment.Center,
                                 ) {
-                                    Box(contentAlignment = Alignment.Center) {
+                                    val miniItem = mediaItems.firstOrNull { it.uri == activeMediaUri }
+                                    if (miniItem != null) {
+                                        MediaArtwork(miniItem, Modifier.fillMaxSize())
+                                    } else {
                                         Icon(
                                             if (activeMediaIsVideo) Icons.Outlined.Movie else Icons.Outlined.MusicNote,
                                             contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         )
                                     }
                                 }

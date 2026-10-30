@@ -132,6 +132,9 @@ fun MediaLibraryScreen(
     var showCreatePlaylistDialog by rememberSaveable { mutableStateOf(false) }
     var newPlaylistName by rememberSaveable { mutableStateOf("") }
     var musicCategory by rememberSaveable { mutableStateOf("Songs") }
+    var recentMediaUris by remember(context) {
+        mutableStateOf(context.getSharedPreferences("av_music_player_settings", Context.MODE_PRIVATE).getString("recently_played", null).orEmpty().split("\n").filter(String::isNotBlank))
+    }
 
     var selectedDestinationName by rememberSaveable { mutableStateOf(MediaDestination.LIBRARY.name) }
     var previousDestinationName by rememberSaveable { mutableStateOf(MediaDestination.LIBRARY.name) }
@@ -260,6 +263,9 @@ fun MediaLibraryScreen(
     }
 
     val playMedia: (LocalMediaItem) -> Unit = { item ->
+        recentMediaUris = (listOf(item.uri.toString()) + recentMediaUris.filterNot { it == item.uri.toString() }).take(20)
+        context.getSharedPreferences("av_music_player_settings", Context.MODE_PRIVATE)
+            .edit().putString("recently_played", recentMediaUris.joinToString("\n")).apply()
         activeMediaTitle = item.title
         activeMediaArtist = item.artist.orEmpty()
         activeMediaIsVideo = item.kind == MediaKind.VIDEO
@@ -376,7 +382,7 @@ fun MediaLibraryScreen(
                         }
                     }
                     NavigationBar {
-                        MediaDestination.entries.filterNot { it.isPlayer || it.isSettings }.forEach { item ->
+                        listOf(MediaDestination.LIBRARY, MediaDestination.MUSIC, MediaDestination.VIDEOS, MediaDestination.COLLECTIONS).forEach { item ->
                             NavigationBarItem(
                                 selected = destination == item,
                                 onClick = { selectedDestinationName = item.name },
@@ -537,6 +543,7 @@ fun MediaLibraryScreen(
                         .map { it.copy(title = it.artist ?: "Unknown artist") }
                 else -> filteredItems
             }
+            val recentlyPlayedItems = recentMediaUris.mapNotNull { uri -> mediaItems.firstOrNull { it.uri.toString() == uri } }
 
             LazyColumn(
                 modifier = Modifier

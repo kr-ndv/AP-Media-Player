@@ -2,6 +2,7 @@ package dev.krndv.openmediaplayer.feature.library
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
@@ -1009,7 +1010,7 @@ fun MediaLibraryScreen(
                                 items = visibleItems,
                                 key = { "${it.kind.name}_${it.id}" },
                             ) { item ->
-                                MediaItemCard(item = item, onClick = { playMedia(item) }, onDetails = { mediaDetailsItem = item }, onAddToPlaylist = { mediaToAddToPlaylist = item })
+                                MediaItemCard(item = item, onClick = { playMedia(item) }, onDetails = { mediaDetailsItem = item }, onAddToPlaylist = { mediaToAddToPlaylist = item }, onShare = { shareLocalMedia(context, item) })
                             }
                         }
                     } else if (!isScanning && visibleItems.isEmpty()) {
@@ -1024,6 +1025,18 @@ fun MediaLibraryScreen(
                 }
             }
         }
+    }
+}
+
+private fun shareLocalMedia(context: Context, item: LocalMediaItem) {
+    val mimeType = item.mimeType ?: if (item.kind == MediaKind.AUDIO) "audio/*" else "video/*"
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        putExtra(Intent.EXTRA_STREAM, item.uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    runCatching {
+        context.startActivity(Intent.createChooser(shareIntent, "Share ${item.title}"))
     }
 }
 
@@ -1379,6 +1392,7 @@ private fun MediaItemCard(
     onClick: () -> Unit,
     onDetails: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
+    onShare: () -> Unit = {},
     trailingAction: (@Composable () -> Unit)? = null,
 ) {
     Card(
@@ -1456,6 +1470,7 @@ private fun MediaItemCard(
                         DropdownMenuItem(text = { Text("Play") }, onClick = { showActions = false; onClick() })
                         DropdownMenuItem(text = { Text("Details") }, onClick = { showActions = false; onDetails() })
                         DropdownMenuItem(text = { Text("Add to playlist") }, onClick = { showActions = false; onAddToPlaylist() })
+                        DropdownMenuItem(text = { Text("Share") }, onClick = { showActions = false; onShare() })
                     }
                 }
             }

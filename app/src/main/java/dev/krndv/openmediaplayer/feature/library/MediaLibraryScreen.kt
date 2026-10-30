@@ -593,7 +593,7 @@ fun MediaLibraryScreen(
                 else -> filteredItems
             }
             val recentlyPlayedItems = recentMediaUris.mapNotNull { uri -> mediaItems.firstOrNull { it.uri.toString() == uri } }
-    val homeMediaItems = if (recentlyPlayedItems.isNotEmpty()) recentlyPlayedItems else visibleItems.take(4)
+            val homeMediaItems = if (recentlyPlayedItems.isNotEmpty()) recentlyPlayedItems else visibleItems.take(4)
 
             LazyColumn(
                 modifier = Modifier

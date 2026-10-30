@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.MusicNote
@@ -101,11 +102,13 @@ private enum class MediaDestination(
     val kind: MediaKind? = null,
     val isPlayer: Boolean = false,
     val isSettings: Boolean = false,
+    val isFavorites: Boolean = false,
 ) {
     LIBRARY("Home", Icons.Outlined.Home),
     MUSIC("Music", Icons.Outlined.MusicNote, MediaKind.AUDIO),
     VIDEOS("Videos", Icons.Outlined.Movie, MediaKind.VIDEO),
     COLLECTIONS("Library", Icons.Outlined.FolderOpen),
+    FAVORITES("Favorites", Icons.Outlined.Favorite, kind = MediaKind.AUDIO, isFavorites = true),
     PLAYER("Player", Icons.Outlined.PlayCircle, isPlayer = true),
     SETTINGS("Settings", Icons.Outlined.Settings, isSettings = true),
 }
@@ -420,6 +423,10 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
             val visibleItems = mediaItems
                 .asSequence()
                 .filter { destination.kind == null || it.kind == destination.kind }
+                .filter { item ->
+                    !destination.isFavorites || context.getSharedPreferences("ap_music_player", Context.MODE_PRIVATE)
+                        .getBoolean("favorite:${item.uri}", false)
+                }
                 .filter { item ->
                     val query = searchQuery.trim()
                     query.isEmpty() ||

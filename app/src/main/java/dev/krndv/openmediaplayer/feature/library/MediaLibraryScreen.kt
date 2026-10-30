@@ -933,31 +933,74 @@ private fun EmptyLibraryCard(
     }
 }
 
+private object MediaArtworkCache {
+    private val cache = android.util.LruCache<String, Bitmap>(
+        (Runtime.getRuntime().maxMemory() / 8L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
+    ) {
+        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+    }
+
+    @Synchronized
+    fun get(key: String): Bitmap? = cache.get(key)
+
+    @Synchronized
+    fun put(key: String, bitmap: Bitmap) {
+        cache.put(key, bitmap)
+    }
+}
+
+private fun loadMediaArtwork(context: Context, item: LocalMediaItem): Bitmap? {
+    val key = "${item.kind}:${item.uri}"
+    MediaArtworkCache.get(key)?.let { return it }
+    val bitmap = runCatching {
+        MediaMetadataRetriever().let { retriever ->
+            try {
+                retriever.setDataSource(context, item.uri)
+                if (item.kind == MediaKind.VIDEO) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                        retriever.getScaledFrameAtTime(
+                            0L,
+                            MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+                            512,
+                            512,
+                        )
+                    } else {
+                        retriever.getFrameAtTime(0L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                    }
+                } else {
+                    retriever.embeddedPicture?.let { bytes ->
+                        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+                        val sample = (maxOf(bounds.outWidth, bounds.outHeight) / 512).coerceAtLeast(1)
+                        BitmapFactory.decodeByteArray(
+                            bytes,
+                            0,
+                            bytes.size,
+                            BitmapFactory.Options().apply { inSampleSize = sample },
+                        )
+                    }
+                }
+            } finally {
+                retriever.release()
+            }
+        }
+    }.getOrNull() ?: return null
+    MediaArtworkCache.put(key, bitmap)
+    return bitmap
+}
+
 @Composable
 private fun MediaArtwork(
     item: LocalMediaItem,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    var bitmap by remember(item.uri) { mutableStateOf<Bitmap?>(null) }
+    var bitmap by remember(item.uri, item.kind) {
+        mutableStateOf(MediaArtworkCache.get("${item.kind}:${item.uri}"))
+    }
     LaunchedEffect(item.uri, item.kind) {
-        bitmap = withContext(Dispatchers.IO) {
-            runCatching {
-                MediaMetadataRetriever().let { retriever ->
-                    try {
-                        retriever.setDataSource(context, item.uri)
-                        if (item.kind == MediaKind.VIDEO) {
-                            retriever.getFrameAtTime(0L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-                        } else {
-                            retriever.embeddedPicture?.let { bytes ->
-                                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                            }
-                        }
-                    } finally {
-                        retriever.release()
-                    }
-                }
-            }.getOrNull()
+        if (bitmap == null) {
+            bitmap = withContext(Dispatchers.IO) { loadMediaArtwork(context, item) }
         }
     }
     val art = bitmap

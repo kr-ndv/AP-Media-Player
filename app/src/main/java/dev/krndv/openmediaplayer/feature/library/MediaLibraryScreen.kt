@@ -308,13 +308,15 @@ fun MediaLibraryScreen(
                             Icon(Icons.Outlined.Settings, contentDescription = "Settings")
                         }
                     }
-                    IconButton(
-                        onClick = {
-                            val canReadAnything = canReadAudioMedia(context) || canReadVideoMedia(context)
-                            if (canReadAnything) scanVersion += 1 else requestMediaAccess()
-                        },
-                    ) {
-                        Icon(Icons.Outlined.Refresh, contentDescription = "Rescan media")
+                    if (!destination.isSettings) {
+                        IconButton(
+                            onClick = {
+                                val canReadAnything = canReadAudioMedia(context) || canReadVideoMedia(context)
+                                if (canReadAnything) scanVersion += 1 else requestMediaAccess()
+                            },
+                        ) {
+                            Icon(Icons.Outlined.Refresh, contentDescription = "Rescan media")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -372,9 +374,13 @@ fun MediaLibraryScreen(
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                     Text(
-                                        if (playbackSnapshot.status == PlaybackStatus.PLAYING) "Now playing" else "Paused",
+                                        activeMediaArtist.ifBlank {
+                                            if (playbackSnapshot.status == PlaybackStatus.PLAYING) "Now playing" else "Paused"
+                                        },
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
                                     )
                                 }
                                 IconButton(onClick = {
@@ -489,12 +495,10 @@ fun MediaLibraryScreen(
                         Text(if (isScanning) "Scanning…" else "Rescan media")
                     }
                 }
-                SettingsSectionCard(title = "Player appearance", subtitle = "Customize the Now Playing experience.") {
-                    PlayerAppearanceSettingsScreen(
-                        appearance = playerAppearance,
-                        onAppearanceChange = updatePlayerAppearance,
-                    )
-                }
+                PlayerAppearanceSettingsScreen(
+                    appearance = playerAppearance,
+                    onAppearanceChange = updatePlayerAppearance,
+                )
                 SettingsSectionCard(title = "About", subtitle = "AV Music Player · version 0.1.0") {
                     Text("Local-first media player. Your library is scanned on your device and is not uploaded.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Background playback, system media controls and a persistent playback service are not yet implemented.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

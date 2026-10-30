@@ -127,6 +127,7 @@ fun PlaybackScreen(
     var currentPositionMs by remember(engine) { mutableStateOf(engine.currentTimeMs) }
     var durationMs by remember(engine) { mutableStateOf(engine.durationMs) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
+    var lyricsText by remember(currentMediaUri) { mutableStateOf("") }
     var isFavorite by rememberSaveable { mutableStateOf(false) }
     var shuffleEnabled by rememberSaveable { mutableStateOf(false) }
     var repeatEnabled by rememberSaveable { mutableStateOf(false) }
@@ -143,6 +144,7 @@ fun PlaybackScreen(
                         if (currentMediaIsVideo) {
                             retriever.getFrameAtTime(0L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
                         } else {
+                            lyricsText = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_LYRICS).orEmpty()
                             retriever.embeddedPicture?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
                         }
                     } finally {
@@ -170,6 +172,16 @@ fun PlaybackScreen(
         ) {
             runCatching { engine.open(currentMediaUri!!, autoplay = true) }
                 .onFailure { feedback = it.localizedMessage ?: "Could not repeat this track." }
+        }
+    }
+
+    val lyricsPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri: Uri? ->
+        if (uri != null) {
+            lyricsText = runCatching {
+                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }.orEmpty()
+            }.getOrElse { "Could not read this lyrics file." }
         }
     }
 
@@ -519,11 +531,25 @@ fun PlaybackScreen(
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
                     Text(currentMediaTitle.ifBlank { "Lyrics" }, style = MaterialTheme.typography.titleLarge)
-                    Text(
-                        "Lyrics aren't available for this local track yet. Add a synced or plain-text lyrics source to display them here.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    if (lyricsText.isBlank()) {
+                        Text(
+                            "No embedded lyrics found for this track. You can select a local .lrc or .txt lyrics file.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OutlinedButton(onClick = { lyricsPicker.launch(arrayOf("text/*", "application/octet-stream")) }) {
+                            Text("Load lyrics file")
+                        }
+                    } else {
+                        Text(
+                            lyricsText,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        OutlinedButton(onClick = { lyricsPicker.launch(arrayOf("text/*", "application/octet-stream")) }) {
+                            Text("Choose another lyrics file")
+                        }
+                    }
                 }
             } else {
                 Box(

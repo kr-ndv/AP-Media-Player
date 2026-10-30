@@ -58,6 +58,13 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
         mediaPlayer.time = positionMs.coerceIn(0L, durationMs)
     }
 
+    @Synchronized
+    fun setPlaybackRate(rate: Float) {
+        check(!released) { "PlaybackEngine has already been released" }
+        require(rate in 0.25f..4.0f) { "Playback rate must be between 0.25x and 4x" }
+        mediaPlayer.setRate(rate)
+    }
+
     private val playerEventListener = MediaPlayer.EventListener { event ->
         val uriScheme = currentUri?.scheme ?: "unknown"
         when (event.type) {

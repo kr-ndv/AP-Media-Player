@@ -384,18 +384,24 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                             .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
                             ?.name ?: MediaDestination.LIBRARY.name
                     },
-                    onPreviousTrack = {
+                    onPreviousTrack = { shuffle ->
                         val audioQueue = mediaItems.filter { it.kind == MediaKind.AUDIO }
                         if (audioQueue.isNotEmpty()) {
                             val index = audioQueue.indexOfFirst { it.uri == activeMediaUri }
-                            playMedia(audioQueue[if (index <= 0) audioQueue.lastIndex else index - 1])
+                            val target = if (shuffle && audioQueue.size > 1) {
+                                audioQueue.indices.filter { it != index }.random()
+                            } else if (index <= 0) audioQueue.lastIndex else index - 1
+                            playMedia(audioQueue[target])
                         }
                     },
-                    onNextTrack = {
+                    onNextTrack = { shuffle ->
                         val audioQueue = mediaItems.filter { it.kind == MediaKind.AUDIO }
                         if (audioQueue.isNotEmpty()) {
                             val index = audioQueue.indexOfFirst { it.uri == activeMediaUri }
-                            playMedia(audioQueue[if (index < 0 || index == audioQueue.lastIndex) 0 else index + 1])
+                            val target = if (shuffle && audioQueue.size > 1) {
+                                audioQueue.indices.filter { it != index }.random()
+                            } else if (index < 0 || index == audioQueue.lastIndex) 0 else index + 1
+                            playMedia(audioQueue[target])
                         }
                     },
                     musicQueue = mediaItems.filter { it.kind == MediaKind.AUDIO }.map { item ->

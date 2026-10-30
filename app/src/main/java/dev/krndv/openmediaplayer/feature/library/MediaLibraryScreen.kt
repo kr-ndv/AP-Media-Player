@@ -115,7 +115,13 @@ private enum class MediaDestination(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
+fun MediaLibraryScreen(
+    engine: LibVlcPlaybackEngine,
+    themeMode: String = "system",
+    onThemeModeChange: (String) -> Unit = {},
+    dynamicColor: Boolean = false,
+    onDynamicColorChange: (Boolean) -> Unit = {},
+) {
     val context = LocalContext.current
     val repository = remember(context) { MediaRepository(context) }
 
@@ -145,6 +151,8 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
     var activeMediaUri by remember { mutableStateOf<Uri?>(null) }
     var playbackSnapshot by remember(engine) { mutableStateOf(engine.playbackState) }
     var playerAppearance by remember(context) { mutableStateOf(PlayerAppearance.load(context)) }
+    val videoPreferences = remember(context) { context.getSharedPreferences("ap_video_player", Context.MODE_PRIVATE) }
+    var videoOrientation by remember(context) { mutableStateOf(videoPreferences.getString("orientation", "auto") ?: "auto") }
     val updatePlayerAppearance: (PlayerAppearance) -> Unit = { updated ->
         playerAppearance = updated
         updated.save(context)
@@ -347,10 +355,54 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState()),
             ) {
-                PlayerAppearanceSettingsScreen(
-                    appearance = playerAppearance,
-                    onAppearanceChange = updatePlayerAppearance,
-                )
+                SettingsSectionCard(title = "Appearance", subtitle = "Choose how AV Music Player looks on this device.") {
+                    Text("Theme", style = MaterialTheme.typography.titleSmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("system" to "System", "light" to "Light", "dark" to "Dark").forEach { (value, label) ->
+                            FilterChip(selected = themeMode == value, onClick = { onThemeModeChange(value) }, label = { Text(label) })
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text("Dynamic color", style = MaterialTheme.typography.titleSmall)
+                            Text("Use colors from your wallpaper on Android 12 and newer.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        FilterChip(selected = dynamicColor, onClick = { onDynamicColorChange(!dynamicColor) }, label = { Text(if (dynamicColor) "On" else "Off") })
+                    }
+                }
+                SettingsSectionCard(title = "Video playback", subtitle = "Default orientation applied when opening a video.") {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("auto" to "Auto", "landscape" to "Landscape", "portrait" to "Portrait").forEach { (value, label) ->
+                            FilterChip(
+                                selected = videoOrientation == value,
+                                onClick = {
+                                    videoOrientation = value
+                                    videoPreferences.edit().putString("orientation", value).apply()
+                                },
+                                label = { Text(label) },
+                            )
+                        }
+                    }
+                }
+                SettingsSectionCard(title = "Library", subtitle = "Your media is discovered locally using Android MediaStore.") {
+                    Text("${mediaItems.count { it.kind == MediaKind.AUDIO }} audio tracks", style = MaterialTheme.typography.bodyMedium)
+                    Text("${mediaItems.count { it.kind == MediaKind.VIDEO }} videos", style = MaterialTheme.typography.bodyMedium)
+                    Button(onClick = { scanVersion += 1 }, enabled = !isScanning) {
+                        Icon(Icons.Outlined.Refresh, contentDescription = null)
+                        Spacer(Modifier.size(8.dp))
+                        Text(if (isScanning) "Scanning…" else "Rescan media")
+                    }
+                }
+                SettingsSectionCard(title = "Player appearance", subtitle = "Customize the Now Playing experience.") {
+                    PlayerAppearanceSettingsScreen(
+                        appearance = playerAppearance,
+                        onAppearanceChange = updatePlayerAppearance,
+                    )
+                }
+                SettingsSectionCard(title = "About", subtitle = "AV Music Player · version 0.1.0") {
+                    Text("Local-first media player. Your library is scanned on your device and is not uploaded.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Background playback, system media controls and a persistent playback service are not yet implemented.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         } else if (destination.isPlayer) {
             Column(
@@ -966,6 +1018,27 @@ private fun loadMediaArtwork(context: Context, item: LocalMediaItem): Bitmap? {
     return bitmap
 }
 
+@Composable
+private fun SettingsSectionCard(
+    title: String,
+    subtitle: String,
+    content: @Composable Column.() -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            content()
+        }
+    }
+}
 @Composable
 private fun MediaArtwork(
     item: LocalMediaItem,

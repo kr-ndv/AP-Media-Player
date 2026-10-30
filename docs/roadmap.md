@@ -1,4 +1,4 @@
-# AP Media Player development roadmap
+# AV Music Player development roadmap
 
 This roadmap prioritizes a trustworthy playback foundation before expanding the feature set. A successful Gradle build is necessary but is not proof that audio or video playback works on a physical Android device.
 

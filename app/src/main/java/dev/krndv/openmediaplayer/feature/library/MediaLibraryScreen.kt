@@ -194,9 +194,16 @@ fun MediaLibraryScreen(
     var playerAppearance by remember(context) { mutableStateOf(PlayerAppearance.load(context)) }
     val videoPreferences = remember(context) { context.getSharedPreferences("ap_video_player", Context.MODE_PRIVATE) }
     var videoOrientation by remember(context) { mutableStateOf(videoPreferences.getString("orientation", "auto") ?: "auto") }
+    var videoAspectMode by remember(context) { mutableStateOf(videoPreferences.getString("aspect_mode", "fit") ?: "fit") }
+    var rememberVideoPosition by remember(context) { mutableStateOf(videoPreferences.getBoolean("remember_position", true)) }
+    var hardwareAccelerationEnabled by remember(context) { mutableStateOf(videoPreferences.getBoolean("hardware_acceleration", true)) }
     val updatePlayerAppearance: (PlayerAppearance) -> Unit = { updated ->
         playerAppearance = updated
         updated.save(context)
+    }
+
+    LaunchedEffect(engine, hardwareAccelerationEnabled) {
+        runCatching { engine.setHardwareAccelerationEnabled(hardwareAccelerationEnabled) }
     }
 
     DisposableEffect(engine) {
@@ -417,7 +424,8 @@ fun MediaLibraryScreen(
                         FilterChip(selected = dynamicColor, onClick = { onDynamicColorChange(!dynamicColor) }, label = { Text(if (dynamicColor) "On" else "Off") })
                     }
                 }
-                SettingsSectionCard(title = "Video playback", subtitle = "Default orientation applied when opening a video.") {
+                SettingsSectionCard(title = "Video playback", subtitle = "Adjust default video behavior.") {
+                    Text("Screen orientation", style = MaterialTheme.typography.titleSmall)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("auto" to "Auto", "landscape" to "Landscape", "portrait" to "Portrait").forEach { (value, label) ->
                             FilterChip(
@@ -429,6 +437,47 @@ fun MediaLibraryScreen(
                                 label = { Text(label) },
                             )
                         }
+                    }
+                    Text("Default aspect ratio", style = MaterialTheme.typography.titleSmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("fit" to "Fit", "zoom" to "Zoom").forEach { (value, label) ->
+                            FilterChip(
+                                selected = videoAspectMode == value,
+                                onClick = {
+                                    videoAspectMode = value
+                                    videoPreferences.edit().putString("aspect_mode", value).apply()
+                                },
+                                label = { Text(label) },
+                            )
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Remember video position", style = MaterialTheme.typography.titleSmall)
+                            Text("Resume videos from the last saved position.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        FilterChip(
+                            selected = rememberVideoPosition,
+                            onClick = {
+                                rememberVideoPosition = !rememberVideoPosition
+                                videoPreferences.edit().putBoolean("remember_position", rememberVideoPosition).apply()
+                            },
+                            label = { Text(if (rememberVideoPosition) "On" else "Off") },
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Hardware acceleration", style = MaterialTheme.typography.titleSmall)
+                            Text("Use device video decoding where supported. Applies to newly opened media.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        FilterChip(
+                            selected = hardwareAccelerationEnabled,
+                            onClick = {
+                                hardwareAccelerationEnabled = !hardwareAccelerationEnabled
+                                videoPreferences.edit().putBoolean("hardware_acceleration", hardwareAccelerationEnabled).apply()
+                            },
+                            label = { Text(if (hardwareAccelerationEnabled) "On" else "Off") },
+                        )
                     }
                 }
                 SettingsSectionCard(title = "Library", subtitle = "Your media is discovered locally using Android MediaStore.") {

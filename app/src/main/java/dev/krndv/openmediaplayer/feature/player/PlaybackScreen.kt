@@ -405,9 +405,19 @@ fun PlaybackScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                FilterChip(selected = !showLyrics, onClick = { showLyrics = false }, label = { Text("Song") })
+                FilterChip(
+                    selected = !showLyrics,
+                    onClick = { showLyrics = false },
+                    label = { Text("Song") },
+                    shape = RoundedCornerShape(topStart = 18.dp, topEnd = 8.dp, bottomEnd = 18.dp, bottomStart = 8.dp),
+                )
                 androidx.compose.foundation.layout.Spacer(Modifier.size(10.dp))
-                FilterChip(selected = showLyrics, onClick = { showLyrics = true }, label = { Text("Lyrics") })
+                FilterChip(
+                    selected = showLyrics,
+                    onClick = { showLyrics = true },
+                    label = { Text("Lyrics") },
+                    shape = RoundedCornerShape(topStart = 8.dp, topEnd = 18.dp, bottomEnd = 8.dp, bottomStart = 18.dp),
+                )
             }
 
             if (showLyrics) {
@@ -425,7 +435,8 @@ fun PlaybackScreen(
             } else {
                 Box(
                     modifier = Modifier.fillMaxWidth().aspectRatio(1f)
-                        .clip(RoundedCornerShape(28.dp))
+                        // Expressive asymmetric silhouette inspired by Material 3 Expressive.
+                        .clip(RoundedCornerShape(topStart = 44.dp, topEnd = 26.dp, bottomEnd = 44.dp, bottomStart = 26.dp))
                         .background(
                             Brush.linearGradient(
                                 listOf(
@@ -449,7 +460,7 @@ fun PlaybackScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                             Surface(
                                 modifier = Modifier.size(112.dp),
-                                shape = RoundedCornerShape(34.dp),
+                                shape = RoundedCornerShape(topStart = 38.dp, topEnd = 24.dp, bottomEnd = 38.dp, bottomStart = 24.dp),
                                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.20f),
                                 contentColor = MaterialTheme.colorScheme.onSurface,
                             ) {

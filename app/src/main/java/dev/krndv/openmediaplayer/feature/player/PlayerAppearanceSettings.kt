@@ -27,6 +27,7 @@ data class PlayerAppearance(
     val backgroundEnabled: Boolean = true,
     val backgroundStyle: PlayerBackgroundStyle = PlayerBackgroundStyle.AURORA,
     val wavyPlayPauseEnabled: Boolean = true,
+    val keepScreenOnWhilePlaying: Boolean = true,
 ) {
     fun save(context: Context) {
         context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).edit()
@@ -35,6 +36,7 @@ data class PlayerAppearance(
             .putBoolean("background_enabled", backgroundEnabled)
             .putString("background_style", backgroundStyle.name)
             .putBoolean("wavy_play_pause_enabled", wavyPlayPauseEnabled)
+            .putBoolean("keep_screen_on_while_playing", keepScreenOnWhilePlaying)
             .apply()
     }
 
@@ -55,6 +57,7 @@ data class PlayerAppearance(
                     )
                 }.getOrDefault(PlayerBackgroundStyle.AURORA),
                 wavyPlayPauseEnabled = prefs.getBoolean("wavy_play_pause_enabled", true),
+                keepScreenOnWhilePlaying = prefs.getBoolean("keep_screen_on_while_playing", true),
             )
         }
     }
@@ -130,6 +133,19 @@ fun PlayerAppearanceSettingsScreen(
             }
         }
 
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                SettingSwitchRow(
+                    title = "Keep screen on while playing",
+                    description = "Prevent the display from sleeping while the player screen is active and media is playing.",
+                    checked = appearance.keepScreenOnWhilePlaying,
+                    onCheckedChange = { onAppearanceChange(appearance.copy(keepScreenOnWhilePlaying = it)) },
+                )
+            }
+        }
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(18.dp),

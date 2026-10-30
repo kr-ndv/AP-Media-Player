@@ -749,6 +749,7 @@ fun MediaLibraryScreen(
                                     )
                                     Text(
                                         text = "See all",
+                                        modifier = Modifier.clickable { selectedDestinationName = MediaDestination.COLLECTIONS.name },
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.primary,
                                     )

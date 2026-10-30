@@ -223,7 +223,7 @@ fun PlaybackScreen(
 
     LaunchedEffect(requestedUri, videoLayout) {
         val uri = requestedUri ?: return@LaunchedEffect
-        if (videoLayout == null) return@LaunchedEffect
+        if (currentMediaIsVideo && videoLayout == null) return@LaunchedEffect
 
         feedback = ""
         currentMediaTitle = requestedTitle ?: uri.lastPathSegment ?: "Selected media"

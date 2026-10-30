@@ -8,6 +8,7 @@ import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import org.videolan.libvlc.LibVLC
+import org.videolan.libvlc.interfaces.IMedia
 import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
 import org.videolan.libvlc.util.VLCVideoLayout
@@ -89,7 +90,7 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
 
     @Synchronized
     fun addExternalSubtitle(uri: Uri): Boolean =
-        !released && mediaPlayer.addSlave(Media.Slave.Type.Subtitle, uri, true)
+        !released && mediaPlayer.addSlave(IMedia.Slave.Type.Subtitle, uri, true)
 
     @Synchronized
     fun setSubtitleDelayMs(delayMs: Long): Boolean =

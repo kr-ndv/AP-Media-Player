@@ -50,6 +50,8 @@ import androidx.compose.material.icons.outlined.QueueMusic
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -128,6 +130,8 @@ fun PlaybackScreen(
     var videoLayout by remember { mutableStateOf<VLCVideoLayout?>(null) }
     var showVideoControls by rememberSaveable { mutableStateOf(true) }
     var videoGestureFeedback by rememberSaveable { mutableStateOf("") }
+    var showVideoOptions by rememberSaveable { mutableStateOf(false) }
+    var videoOrientation by rememberSaveable { mutableStateOf(context.getSharedPreferences("ap_video_player", android.content.Context.MODE_PRIVATE).getString("orientation", "auto") ?: "auto") }
     var currentPositionMs by remember(engine) { mutableStateOf(engine.currentTimeMs) }
     var durationMs by remember(engine) { mutableStateOf(engine.durationMs) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
@@ -249,13 +253,17 @@ fun PlaybackScreen(
         onDispose { engine.removePlaybackStateListener(listener) }
     }
 
-    // Use an immersive landscape orientation for video; restore the user's
-    // previous orientation when leaving the video player.
-    DisposableEffect(currentMediaIsVideo) {
+    // Apply the selected orientation only while video is active, then restore
+    // the Activity's prior request when leaving the video player.
+    DisposableEffect(currentMediaIsVideo, videoOrientation) {
         val activity = context.findActivity()
         val previousOrientation = activity?.requestedOrientation
         if (currentMediaIsVideo && activity != null) {
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            activity.requestedOrientation = when (videoOrientation) {
+                "landscape" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                "portrait" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
             activity.window.decorView.systemUiVisibility = (
                 android.view.View.SYSTEM_UI_FLAG_FULLSCREEN or
                     android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
@@ -332,8 +340,23 @@ fun PlaybackScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
-                IconButton(onClick = { feedback = if (feedback.isBlank()) "Video playback settings are available from Settings." else "" }) {
-                    Icon(Icons.Outlined.MoreVert, contentDescription = "Video options")
+                Box {
+                    IconButton(onClick = { showVideoOptions = true }) {
+                        Icon(Icons.Outlined.MoreVert, contentDescription = "Video options")
+                    }
+                    DropdownMenu(expanded = showVideoOptions, onDismissRequest = { showVideoOptions = false }) {
+                        Text("Screen orientation", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge)
+                        listOf("auto" to "Auto rotate", "landscape" to "Fixed landscape", "portrait" to "Fixed portrait").forEach { (value, label) ->
+                            DropdownMenuItem(
+                                text = { Text(if (videoOrientation == value) "✓  $label" else label) },
+                                onClick = {
+                                    videoOrientation = value
+                                    context.getSharedPreferences("ap_video_player", android.content.Context.MODE_PRIVATE).edit().putString("orientation", value).apply()
+                                    showVideoOptions = false
+                                },
+                            )
+                        }
+                    }
                 }
             }
             Box(

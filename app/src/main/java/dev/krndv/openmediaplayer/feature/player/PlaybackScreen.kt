@@ -361,6 +361,45 @@ fun PlaybackScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(22.dp),
         ) {
+            // Music player navigation follows Go Back's quiet, minimal header language.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onExitPlayer) {
+                    Icon(
+                        Icons.Outlined.ArrowBack,
+                        contentDescription = "Back to library",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(1.dp),
+                ) {
+                    Text(
+                        "NOW PLAYING",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        "Music",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                IconButton(onClick = { feedback = "Queue controls will be added with the music queue." }) {
+                    Icon(
+                        Icons.Outlined.QueueMusic,
+                        contentDescription = "Open queue",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                IconButton(onClick = { feedback = "More track options are coming soon." }) {
+                    Icon(Icons.Outlined.MoreVert, contentDescription = "Track options")
+                }
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,

@@ -157,7 +157,6 @@ fun PlaybackScreen(
                         if (currentMediaIsVideo) {
                             retriever.getFrameAtTime(0L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
                         } else {
-                            lyricsText = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_LYRICS).orEmpty()
                             retriever.embeddedPicture?.let { bytes -> BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
                         }
                     } finally {

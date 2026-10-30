@@ -493,26 +493,23 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                         )
                     }
 
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            FilterChip(
-                                selected = destination == MediaDestination.LIBRARY,
-                                onClick = { selectedDestinationName = MediaDestination.LIBRARY.name },
-                                label = { Text("All") },
-                            )
-                            FilterChip(
-                                selected = destination == MediaDestination.MUSIC,
-                                onClick = { selectedDestinationName = MediaDestination.MUSIC.name },
-                                label = { Text("Music") },
-                            )
-                            FilterChip(
-                                selected = destination == MediaDestination.VIDEOS,
-                                onClick = { selectedDestinationName = MediaDestination.VIDEOS.name },
-                                label = { Text("Videos") },
-                            )
+                    if (destination != MediaDestination.LIBRARY) {
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                FilterChip(
+                                    selected = destination == MediaDestination.MUSIC,
+                                    onClick = { selectedDestinationName = MediaDestination.MUSIC.name },
+                                    label = { Text("Music") },
+                                )
+                                FilterChip(
+                                    selected = destination == MediaDestination.VIDEOS,
+                                    onClick = { selectedDestinationName = MediaDestination.VIDEOS.name },
+                                    label = { Text("Videos") },
+                                )
+                            }
                         }
                     }
 
@@ -541,7 +538,7 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 ) {
-                                    visibleItems.take(8).forEachIndexed { index, media ->
+                                    visibleItems.take(4).forEachIndexed { index, media ->
                                         Column(
                                             modifier = Modifier.width(126.dp),
                                             verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -549,8 +546,8 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                                             Box(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .height(126.dp)
-                                                    .clip(RoundedCornerShape(22.dp))
+                                                    .height(112.dp)
+                                                    .clip(RoundedCornerShape(20.dp))
                                                     .background(
                                                         Brush.linearGradient(
                                                             listOf(
@@ -599,46 +596,26 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
 
                     if (destination == MediaDestination.LIBRARY) {
                         item {
-                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Text(
-                                    "Quick picks",
+                                    "Explore",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.SemiBold,
                                 )
-                                val latestAudio = mediaItems.firstOrNull { it.kind == MediaKind.AUDIO }
-                                val latestVideo = mediaItems.firstOrNull { it.kind == MediaKind.VIDEO }
                                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     QuickPickCard(
                                         modifier = Modifier.weight(1f),
-                                        title = "Music library",
+                                        title = "Music",
                                         subtitle = "${mediaItems.count { it.kind == MediaKind.AUDIO }} songs",
                                         icon = Icons.Outlined.MusicNote,
                                         onClick = { selectedDestinationName = MediaDestination.MUSIC.name },
                                     )
                                     QuickPickCard(
                                         modifier = Modifier.weight(1f),
-                                        title = "Video library",
+                                        title = "Videos",
                                         subtitle = "${mediaItems.count { it.kind == MediaKind.VIDEO }} videos",
                                         icon = Icons.Outlined.Movie,
                                         onClick = { selectedDestinationName = MediaDestination.VIDEOS.name },
-                                    )
-                                }
-                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    QuickPickCard(
-                                        modifier = Modifier.weight(1f),
-                                        title = "Play latest song",
-                                        subtitle = latestAudio?.title ?: "No audio found",
-                                        icon = Icons.Outlined.PlayCircle,
-                                        enabled = latestAudio != null,
-                                        onClick = { latestAudio?.let(playMedia) },
-                                    )
-                                    QuickPickCard(
-                                        modifier = Modifier.weight(1f),
-                                        title = "Play latest video",
-                                        subtitle = latestVideo?.title ?: "No video found",
-                                        icon = Icons.Outlined.Movie,
-                                        enabled = latestVideo != null,
-                                        onClick = { latestVideo?.let(playMedia) },
                                     )
                                 }
                             }

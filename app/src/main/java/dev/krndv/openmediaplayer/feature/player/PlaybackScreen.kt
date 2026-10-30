@@ -552,11 +552,26 @@ fun PlaybackScreen(
                             Text("Load lyrics file")
                         }
                     } else {
-                        Text(
-                            lyricsText,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+                        val timedLyrics = remember(lyricsText) { parseTimedLyrics(lyricsText) }
+                        if (timedLyrics.isNotEmpty()) {
+                            val activeLine = timedLyrics.indexOfLast { it.timeMs <= currentPositionMs }
+                            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                                timedLyrics.forEachIndexed { index, line ->
+                                    Text(
+                                        line.text,
+                                        style = if (index == activeLine) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyLarge,
+                                        fontWeight = if (index == activeLine) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (index == activeLine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                lyricsText,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                         OutlinedButton(onClick = { lyricsPicker.launch(arrayOf("text/*", "application/octet-stream")) }) {
                             Text("Choose another lyrics file")
                         }
@@ -788,6 +803,30 @@ private fun saveMusicQueue(context: android.content.Context, queue: List<MusicQu
     }
     context.getSharedPreferences("ap_music_player", android.content.Context.MODE_PRIVATE)
         .edit().putString("music_queue", json.toString()).apply()
+}
+
+private data class TimedLyricLine(val timeMs: Long, val text: String)
+
+private fun parseTimedLyrics(source: String): List<TimedLyricLine> {
+    val timestampPattern = Regex("""\\[(\\d{1,2}):(\\d{2})(?:\\.(\\d{1,3}))?]""")
+    return source.lineSequence().flatMap { rawLine ->
+        val matches = timestampPattern.findAll(rawLine).toList()
+        if (matches.isEmpty()) {
+            emptySequence()
+        } else {
+            val lyricText = rawLine.replace(timestampPattern, "").trim()
+            if (lyricText.isBlank()) {
+                emptySequence()
+            } else {
+                matches.asSequence().map { match ->
+                    val minutes = match.groupValues[1].toLong()
+                    val seconds = match.groupValues[2].toLong()
+                    val fraction = match.groupValues[3].padEnd(3, '0').take(3).toLongOrNull() ?: 0L
+                    TimedLyricLine((minutes * 60L + seconds) * 1000L + fraction, lyricText)
+                }
+            }
+        }
+    }.sortedBy { it.timeMs }.toList()
 }
 
 private fun formatPlayerTime(milliseconds: Long): String {

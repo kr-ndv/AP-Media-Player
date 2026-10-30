@@ -1,4 +1,4 @@
-# OpenMediaPlayer — Product and Engineering Plan
+# AV Music Player — Product and Engineering Plan
 
 **Status:** Planning baseline; implementation should begin only after the design and playback investigation gates are satisfied.
 
@@ -16,7 +16,7 @@ Use these repositories for design research and interaction patterns only:
 - LibreTube — visual hierarchy and interaction details only; do not implement online video discovery, subscriptions, downloaders or YouTube-specific behaviors: https://github.com/libre-tube/LibreTube
 - Material 3 design guidance: https://m3.material.io/
 
-Do not copy complete screens, source code, logos, or assets. Review each repository’s licence before reusing any source or asset. References are for inspiration; OpenMediaPlayer needs its own component system, visual identity, and interaction decisions.
+Do not copy complete screens, source code, logos, or assets. Review each repository’s licence before reusing any source or asset. References are for inspiration; AV Music Player needs its own component system, visual identity, and interaction decisions.
 
 ## Product scope and navigation
 Primary bottom destinations:

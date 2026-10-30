@@ -214,16 +214,12 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
         activeMediaArtist = item.artist.orEmpty()
         activeMediaIsVideo = item.kind == MediaKind.VIDEO
         activeMediaUri = item.uri
-        if (item.kind == MediaKind.VIDEO) {
-            previousDestinationName = selectedDestinationName
-            requestedUri = item.uri
-            requestedTitle = item.title
-            selectedDestinationName = MediaDestination.PLAYER.name
-        } else {
-            requestedUri = null
-            requestedTitle = null
-            runCatching { engine.open(item.uri, autoplay = true) }
-        }
+        // Audio and video selections both enter their dedicated player directly.
+        // Video waits for VLCVideoLayout attachment; audio can start immediately.
+        previousDestinationName = selectedDestinationName
+        requestedUri = item.uri
+        requestedTitle = item.title
+        selectedDestinationName = MediaDestination.PLAYER.name
     }
 
     Scaffold(

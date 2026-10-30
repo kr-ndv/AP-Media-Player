@@ -131,6 +131,7 @@ fun PlaybackScreen(
     var shuffleEnabled by rememberSaveable { mutableStateOf(false) }
     var repeatEnabled by rememberSaveable { mutableStateOf(false) }
     var showQueue by rememberSaveable { mutableStateOf(false) }
+    var editableMusicQueue by remember(engine) { mutableStateOf(musicQueue) }
 
     LaunchedEffect(currentMediaUri, currentMediaIsVideo) {
         val uri = currentMediaUri
@@ -439,14 +440,14 @@ fun PlaybackScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("PLAYING QUEUE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
-                                Text("${musicQueue.size} songs", style = MaterialTheme.typography.titleMedium)
+                                Text("${editableMusicQueue.size} songs", style = MaterialTheme.typography.titleMedium)
                             }
                             TextButton(onClick = { showQueue = false }) { Text("Close") }
                         }
-                        if (musicQueue.isEmpty()) {
+                        if (editableMusicQueue.isEmpty()) {
                             Text("No songs in the library queue yet.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         } else {
-                            musicQueue.take(12).forEachIndexed { index, item ->
+                            editableMusicQueue.take(12).forEachIndexed { index, item ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth()
                                         .clip(RoundedCornerShape(16.dp))
@@ -462,9 +463,41 @@ fun PlaybackScreen(
                                         Text(item.artist ?: "Unknown artist", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                                     }
                                     if (item.uri == currentMediaUri) Icon(Icons.Outlined.MusicNote, contentDescription = "Currently playing", tint = MaterialTheme.colorScheme.primary)
+                                    IconButton(
+                                        onClick = {
+                                            if (index > 0) {
+                                                editableMusicQueue = editableMusicQueue.toMutableList().also { queue ->
+                                                    val previous = queue[index - 1]
+                                                    queue[index - 1] = queue[index]
+                                                    queue[index] = previous
+                                                }
+                                            }
+                                        },
+                                        enabled = index > 0,
+                                        modifier = Modifier.size(32.dp),
+                                    ) { Text("↑", style = MaterialTheme.typography.titleSmall) }
+                                    IconButton(
+                                        onClick = {
+                                            if (index < editableMusicQueue.lastIndex) {
+                                                editableMusicQueue = editableMusicQueue.toMutableList().also { queue ->
+                                                    val next = queue[index + 1]
+                                                    queue[index + 1] = queue[index]
+                                                    queue[index] = next
+                                                }
+                                            }
+                                        },
+                                        enabled = index < editableMusicQueue.lastIndex,
+                                        modifier = Modifier.size(32.dp),
+                                    ) { Text("↓", style = MaterialTheme.typography.titleSmall) }
+                                    IconButton(
+                                        onClick = {
+                                            editableMusicQueue = editableMusicQueue.filterIndexed { queueIndex, _ -> queueIndex != index }
+                                        },
+                                        modifier = Modifier.size(32.dp),
+                                    ) { Text("×", style = MaterialTheme.typography.titleMedium) }
                                 }
                             }
-                            if (musicQueue.size > 12) Text("Showing the next 12 of ${musicQueue.size} songs", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (editableMusicQueue.size > 12) Text("Showing the next 12 of ${editableMusicQueue.size} songs", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }

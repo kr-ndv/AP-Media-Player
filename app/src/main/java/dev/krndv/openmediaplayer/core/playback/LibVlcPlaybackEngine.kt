@@ -41,6 +41,9 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
     @Volatile
     private var currentUri: Uri? = null
 
+    @Volatile
+    private var hardwareAccelerationEnabled = true
+
     private var attachedVideoLayout: VLCVideoLayout? = null
     private var activeSourceDescriptor: ParcelFileDescriptor? = null
 
@@ -57,6 +60,12 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
     fun seekTo(positionMs: Long) {
         if (released || durationMs <= 0L) return
         mediaPlayer.time = positionMs.coerceIn(0L, durationMs)
+    }
+
+    @Synchronized
+    fun setHardwareAccelerationEnabled(enabled: Boolean) {
+        check(!released) { "PlaybackEngine has already been released" }
+        hardwareAccelerationEnabled = enabled
     }
 
     @Synchronized
@@ -210,7 +219,7 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
                 Media(libVlc, descriptor.fileDescriptor)
             } ?: Media(libVlc, uri)
             try {
-                media.setHWDecoderEnabled(true, false)
+                media.setHWDecoderEnabled(hardwareAccelerationEnabled, false)
                 mediaPlayer.media = media
 
                 // Keep the descriptor open while native playback reads fd://N.

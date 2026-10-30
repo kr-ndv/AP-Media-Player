@@ -597,7 +597,6 @@ fun MediaLibraryScreen(
                 else -> filteredItems
             }
             val recentlyPlayedItems = recentMediaUris.mapNotNull { uri -> mediaItems.firstOrNull { it.uri.toString() == uri } }
-            val homeMediaItems = if (recentlyPlayedItems.isNotEmpty()) recentlyPlayedItems else visibleItems.take(4)
 
             LazyColumn(
                 modifier = Modifier
@@ -811,7 +810,7 @@ fun MediaLibraryScreen(
                                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 ) {
-                                    homeMediaItems.forEachIndexed { index, media ->
+                                    (recentlyPlayedItems.ifEmpty { visibleItems.take(4) }).forEachIndexed { index, media ->
                                         Column(
                                             modifier = Modifier.width(126.dp),
                                             verticalArrangement = Arrangement.spacedBy(6.dp),

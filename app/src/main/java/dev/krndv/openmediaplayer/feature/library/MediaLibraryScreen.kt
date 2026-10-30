@@ -1025,7 +1025,7 @@ private fun loadMediaArtwork(context: Context, item: LocalMediaItem): Bitmap? {
 private fun SettingsSectionCard(
     title: String,
     subtitle: String,
-    content: @Composable Column.() -> Unit,
+    content: @Composable () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 7.dp),

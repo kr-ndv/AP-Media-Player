@@ -240,7 +240,7 @@ fun MediaLibraryScreen(
                 title = {
                     Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                         Text(
-                            text = "AP Media Player",
+                            text = "AV Music Player",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -912,7 +912,7 @@ private fun PermissionCard(onGrant: () -> Unit) {
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Allow audio and video access so OpenMediaPlayer can automatically build your local library when it opens. Your files stay on this device.",
+                text = "Allow audio and video access so AV Music Player can automatically build your local library when it opens. Your files stay on this device.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

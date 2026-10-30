@@ -233,6 +233,10 @@ fun PlaybackScreen(
         if (uri != null && currentMediaIsVideo) {
             val preferences = context.getSharedPreferences("ap_video_player", android.content.Context.MODE_PRIVATE)
             val resumeKey = "resume:" + uri.toString()
+            if (!preferences.getBoolean("remember_position", true)) {
+                preferences.edit().remove(resumeKey).apply()
+                return@LaunchedEffect
+            }
             for (attempt in 0 until 20) {
                 if (engine.durationMs > 0L) break
                 delay(250L)
@@ -364,6 +368,12 @@ fun PlaybackScreen(
         }
         onDispose {
             if (keepAwake) activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    LaunchedEffect(engine, currentMediaUri, currentMediaIsVideo, videoAspectMode) {
+        if (currentMediaIsVideo && currentMediaUri != null) {
+            engine.setVideoAspectMode(videoAspectMode)
         }
     }
 

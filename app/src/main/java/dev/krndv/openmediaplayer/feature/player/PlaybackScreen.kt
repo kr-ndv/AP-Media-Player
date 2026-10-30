@@ -196,6 +196,35 @@ fun PlaybackScreen(
         }
     }
 
+    LaunchedEffect(engine, currentMediaUri, currentMediaIsVideo) {
+        val uri = currentMediaUri
+        if (uri != null && currentMediaIsVideo) {
+            val preferences = context.getSharedPreferences("ap_video_player", android.content.Context.MODE_PRIVATE)
+            val resumeKey = "resume:" + uri.toString()
+            repeat(20) {
+                if (engine.durationMs > 0L) return@repeat
+                delay(250L)
+            }
+            val savedPosition = preferences.getLong(resumeKey, 0L)
+            val mediaDuration = engine.durationMs
+            if (savedPosition > 5_000L && mediaDuration > 0L && savedPosition < mediaDuration - 10_000L) {
+                engine.seekTo(savedPosition)
+                videoGestureFeedback = "Resumed from " + formatPlayerTime(savedPosition)
+            }
+            while (true) {
+                delay(2_000L)
+                val position = engine.currentTimeMs
+                if (position > 0L && engine.durationMs > 0L) {
+                    if (playbackSnapshot.status == PlaybackStatus.ENDED) {
+                        preferences.edit().remove(resumeKey).apply()
+                    } else {
+                        preferences.edit().putLong(resumeKey, position).apply()
+                    }
+                }
+            }
+        }
+    }
+
     LaunchedEffect(playbackSnapshot.status, repeatEnabled, currentMediaUri, currentMediaIsVideo) {
         if (playbackSnapshot.status == PlaybackStatus.ENDED && !currentMediaIsVideo) {
             if (repeatEnabled && currentMediaUri != null) {

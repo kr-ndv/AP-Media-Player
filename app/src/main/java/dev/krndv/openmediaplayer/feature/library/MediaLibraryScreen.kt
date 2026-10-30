@@ -50,6 +50,7 @@ import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -66,6 +67,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -124,6 +126,12 @@ fun MediaLibraryScreen(
 ) {
     val context = LocalContext.current
     val repository = remember(context) { MediaRepository(context) }
+    val playlistRepository = remember(context) { PlaylistRepository(context) }
+    var playlists by remember(context) { mutableStateOf(playlistRepository.load()) }
+    var selectedPlaylistId by rememberSaveable { mutableStateOf<String?>(null) }
+    var showCreatePlaylistDialog by rememberSaveable { mutableStateOf(false) }
+    var newPlaylistName by rememberSaveable { mutableStateOf("") }
+    var musicCategory by rememberSaveable { mutableStateOf("Songs") }
 
     var selectedDestinationName by rememberSaveable { mutableStateOf(MediaDestination.LIBRARY.name) }
     var previousDestinationName by rememberSaveable { mutableStateOf(MediaDestination.LIBRARY.name) }
@@ -144,6 +152,36 @@ fun MediaLibraryScreen(
         selectedDestinationName = MediaDestination.entries
             .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
             ?.name ?: MediaDestination.LIBRARY.name
+    }
+    if (showCreatePlaylistDialog) {
+        AlertDialog(
+            onDismissRequest = { showCreatePlaylistDialog = false },
+            title = { Text("Create playlist") },
+            text = {
+                OutlinedTextField(
+                    value = newPlaylistName,
+                    onValueChange = { newPlaylistName = it.take(60) },
+                    label = { Text("Playlist name") },
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val created = playlistRepository.create(newPlaylistName)
+                        if (created != null) {
+                            playlists = playlistRepository.load()
+                            selectedPlaylistId = created.id
+                            musicCategory = "Playlists"
+                            newPlaylistName = ""
+                            showCreatePlaylistDialog = false
+                        }
+                    },
+                    enabled = newPlaylistName.isNotBlank() && playlists.none { it.name.equals(newPlaylistName.trim(), ignoreCase = true) },
+                ) { Text("Create") }
+            },
+            dismissButton = { TextButton(onClick = { showCreatePlaylistDialog = false }) { Text("Cancel") } },
+        )
     }
     var activeMediaTitle by rememberSaveable { mutableStateOf("") }
     var activeMediaArtist by rememberSaveable { mutableStateOf("") }

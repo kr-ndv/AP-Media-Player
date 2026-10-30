@@ -1134,6 +1134,7 @@ private fun MediaArtwork(
 private fun MediaItemCard(
     item: LocalMediaItem,
     onClick: () -> Unit,
+    trailingAction: (@Composable () -> Unit)? = null,
 ) {
     Card(
         onClick = onClick,
@@ -1198,8 +1199,12 @@ private fun MediaItemCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            FilledTonalIconButton(onClick = onClick) {
-                Icon(Icons.Outlined.PlayArrow, contentDescription = "Play ${item.title}")
+            if (trailingAction != null) {
+                trailingAction()
+            } else {
+                FilledTonalIconButton(onClick = onClick) {
+                    Icon(Icons.Outlined.PlayArrow, contentDescription = "Play ${item.title}")
+                }
             }
         }
     }

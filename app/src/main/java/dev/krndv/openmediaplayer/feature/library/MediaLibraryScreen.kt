@@ -250,7 +250,7 @@ fun MediaLibraryScreen(
     var playbackSnapshot by remember(engine) { mutableStateOf(engine.playbackState) }
     var playerAppearance by remember(context) { mutableStateOf(PlayerAppearance.load(context)) }
     val videoPreferences = remember(context) { context.getSharedPreferences("ap_video_player", Context.MODE_PRIVATE) }
-    var videoOrientation by remember(context) { mutableStateOf(videoPreferences.getString("orientation", "auto") ?: "auto") }
+    var videoOrientation by remember(context) { mutableStateOf(videoPreferences.getString("orientation", "landscape") ?: "auto") }
     var videoAspectMode by remember(context) { mutableStateOf(videoPreferences.getString("aspect_mode", "fit") ?: "fit") }
     var rememberVideoPosition by remember(context) { mutableStateOf(videoPreferences.getBoolean("remember_position", true)) }
     var hardwareAccelerationEnabled by remember(context) { mutableStateOf(videoPreferences.getBoolean("hardware_acceleration", true)) }

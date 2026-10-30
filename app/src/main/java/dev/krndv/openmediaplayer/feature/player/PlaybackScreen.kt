@@ -99,7 +99,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.videolan.libvlc.util.VLCVideoLayout
 
-data class MusicQueueEntry(val uri: Uri, val title: String, val artist: String?)
+data class MusicQueueEntry(val uri: Uri, val title: String, val artist: String?, val durationMs: Long = 0L)
 
 @Composable
 fun PlaybackScreen(
@@ -786,8 +786,12 @@ fun PlaybackScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("PLAYING QUEUE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
-                                Text("${editableMusicQueue.size} songs", style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                "${editableMusicQueue.size} songs · ${formatPlayerTime(editableMusicQueue.sumOf { it.durationMs })}",
+                                style = MaterialTheme.typography.titleMedium,
+                            )
                             }
+                            TextButton(onClick = { updateMusicQueue(emptyList()) }, enabled = editableMusicQueue.isNotEmpty()) { Text("Clear") }
                             TextButton(onClick = { showQueue = false }) { Text("Close") }
                         }
                         if (editableMusicQueue.isEmpty()) {
@@ -1133,6 +1137,7 @@ private fun loadSavedMusicQueue(context: android.content.Context, fallback: List
                 uri = Uri.parse(item.getString("uri")),
                 title = item.getString("title"),
                 artist = item.optString("artist").takeIf(String::isNotBlank),
+                durationMs = item.optLong("durationMs", 0L),
             )
         }.ifEmpty { fallback }
     }.getOrElse { fallback }
@@ -1141,7 +1146,7 @@ private fun loadSavedMusicQueue(context: android.content.Context, fallback: List
 private fun saveMusicQueue(context: android.content.Context, queue: List<MusicQueueEntry>) {
     val json = JSONArray()
     queue.forEach { entry ->
-        json.put(JSONObject().put("uri", entry.uri.toString()).put("title", entry.title).put("artist", entry.artist ?: ""))
+        json.put(JSONObject().put("uri", entry.uri.toString()).put("title", entry.title).put("artist", entry.artist ?: "").put("durationMs", entry.durationMs))
     }
     context.getSharedPreferences("ap_music_player", android.content.Context.MODE_PRIVATE)
         .edit().putString("music_queue", json.toString()).apply()

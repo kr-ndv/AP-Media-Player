@@ -1,10 +1,10 @@
-# AP Media Player — UI design specification
+# AV Music Player — UI design specification
 
 ## Design direction
 Build a distinctive, friendly Android media experience using Material 3 Expressive foundations: strong but readable type hierarchy, large rounded surfaces, tonal layering, pill-shaped filters, clear playback focus, and responsive light/dark themes. The visual direction is informed by the user's references to Echo Music (artwork and music-library presentation), Next Player (video playback controls and utility), and VLC (format compatibility and playback features). Do not copy any reference app screen pixel-for-pixel.
 
 ## Brand and visual language
-- Product name: AP Media Player.
+- Product name: AV Music Player.
 - Positioning line: Music. Video. Yours.
 - Use Android dynamic color when available, with the existing purple/lilac family palette as fallback.
 - Prefer spacious content, 24dp-ish large card corners, compact song rows, and strong primary playback controls.

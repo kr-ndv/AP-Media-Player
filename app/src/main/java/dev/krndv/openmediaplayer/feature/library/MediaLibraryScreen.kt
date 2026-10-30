@@ -43,6 +43,7 @@ import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.ArrowBack
@@ -61,6 +62,8 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
@@ -132,6 +135,7 @@ fun MediaLibraryScreen(
     var showCreatePlaylistDialog by rememberSaveable { mutableStateOf(false) }
     var newPlaylistName by rememberSaveable { mutableStateOf("") }
     var musicCategory by rememberSaveable { mutableStateOf("Songs") }
+    var mediaDetailsItem by remember { mutableStateOf<LocalMediaItem?>(null) }
     var recentMediaUris by remember(context) {
         mutableStateOf(context.getSharedPreferences("av_music_player_settings", Context.MODE_PRIVATE).getString("recently_played", null).orEmpty().split("\n").filter(String::isNotBlank))
     }
@@ -156,6 +160,28 @@ fun MediaLibraryScreen(
             .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
             ?.name ?: MediaDestination.LIBRARY.name
     }
+    mediaDetailsItem?.let { item ->
+        AlertDialog(
+            onDismissRequest = { mediaDetailsItem = null },
+            title = { Text(item.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (item.kind == MediaKind.AUDIO) {
+                        item.artist?.let { Text("Artist: $it", style = MaterialTheme.typography.bodyMedium) }
+                        item.album?.let { Text("Album: $it", style = MaterialTheme.typography.bodyMedium) }
+                    } else {
+                        Text("Type: Video", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Text("Duration: ${item.durationMs.takeIf { it > 0 }?.let(::formatDuration) ?: "Unknown"}", style = MaterialTheme.typography.bodyMedium)
+                    Text("Size: ${item.sizeBytes.takeIf { it > 0 }?.let(::formatSize) ?: "Unknown"}", style = MaterialTheme.typography.bodyMedium)
+                    Text("Format: ${item.mimeType ?: "Unknown"}", style = MaterialTheme.typography.bodyMedium)
+                    Text("Source: ${item.uri}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = { TextButton(onClick = { mediaDetailsItem = null }) { Text("Close") } },
+        )
+    }
+
     if (showCreatePlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showCreatePlaylistDialog = false },
@@ -952,7 +978,7 @@ fun MediaLibraryScreen(
                                 items = visibleItems,
                                 key = { "${it.kind.name}_${it.id}" },
                             ) { item ->
-                                MediaItemCard(item = item, onClick = { playMedia(item) })
+                                MediaItemCard(item = item, onClick = { playMedia(item) }, onDetails = { mediaDetailsItem = item })
                             }
                         }
                     } else if (!isScanning && visibleItems.isEmpty()) {
@@ -1320,6 +1346,7 @@ private fun MediaArtwork(
 private fun MediaItemCard(
     item: LocalMediaItem,
     onClick: () -> Unit,
+    onDetails: () -> Unit = {},
     trailingAction: (@Composable () -> Unit)? = null,
 ) {
     Card(
@@ -1388,8 +1415,15 @@ private fun MediaItemCard(
             if (trailingAction != null) {
                 trailingAction()
             } else {
-                FilledTonalIconButton(onClick = onClick) {
-                    Icon(Icons.Outlined.PlayArrow, contentDescription = "Play ${item.title}")
+                var showActions by remember(item.uri) { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { showActions = true }) {
+                        Icon(Icons.Outlined.MoreVert, contentDescription = "Options for ${item.title}")
+                    }
+                    DropdownMenu(expanded = showActions, onDismissRequest = { showActions = false }) {
+                        DropdownMenuItem(text = { Text("Play") }, onClick = { showActions = false; onClick() })
+                        DropdownMenuItem(text = { Text("Details") }, onClick = { showActions = false; onDetails() })
+                    }
                 }
             }
         }

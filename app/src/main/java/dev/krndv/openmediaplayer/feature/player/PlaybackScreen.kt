@@ -733,8 +733,24 @@ fun PlaybackScreen(
                         tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                IconButton(onClick = { feedback = "More track options are coming soon." }) {
-                    Icon(Icons.Outlined.MoreVert, contentDescription = "Track options")
+                Box {
+                    IconButton(onClick = { showTrackOptions = true }) {
+                        Icon(Icons.Outlined.MoreVert, contentDescription = "Track options")
+                    }
+                    DropdownMenu(expanded = showTrackOptions, onDismissRequest = { showTrackOptions = false }) {
+                        Text("Playback speed", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge)
+                        listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f).forEach { rate ->
+                            DropdownMenuItem(
+                                text = { Text((if (playbackRate == rate) "✓  " else "") + rate.toString() + "×") },
+                                onClick = {
+                                    runCatching { engine.setPlaybackRate(rate) }
+                                        .onSuccess { playbackRate = rate }
+                                        .onFailure { feedback = it.localizedMessage ?: "Could not change playback speed." }
+                                    showTrackOptions = false
+                                },
+                            )
+                        }
+                    }
                 }
             }
             Row(
@@ -923,7 +939,7 @@ fun PlaybackScreen(
                                 }
                             }
                             Text(
-                                "AP MEDIA PLAYER",
+                                "AV MUSIC PLAYER",
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.88f),
                             )

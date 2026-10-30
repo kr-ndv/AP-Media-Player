@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
@@ -131,6 +132,7 @@ fun PlaybackScreen(
     var showVideoControls by rememberSaveable { mutableStateOf(true) }
     var videoGestureFeedback by rememberSaveable { mutableStateOf("") }
     var showVideoOptions by rememberSaveable { mutableStateOf(false) }
+    var showTrackOptions by rememberSaveable { mutableStateOf(false) }
     var videoOrientation by rememberSaveable { mutableStateOf(context.getSharedPreferences("ap_video_player", android.content.Context.MODE_PRIVATE).getString("orientation", "auto") ?: "auto") }
     var playbackRate by rememberSaveable { mutableStateOf(1f) }
     var videoAspectMode by rememberSaveable { mutableStateOf(context.getSharedPreferences("ap_video_player", android.content.Context.MODE_PRIVATE).getString("aspect_mode", "fit") ?: "fit") }
@@ -874,14 +876,28 @@ fun PlaybackScreen(
                 Box(
                     modifier = Modifier.fillMaxWidth().aspectRatio(1f)
                         // Expressive asymmetric silhouette inspired by Material 3 Expressive.
-                        .clip(RoundedCornerShape(topStart = 44.dp, topEnd = 26.dp, bottomEnd = 44.dp, bottomStart = 26.dp))
+                        .fillMaxWidth(0.88f)
+                        .align(Alignment.CenterHorizontally)
+                        .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 24.dp, bottomEnd = 32.dp, bottomStart = 24.dp))
                         .background(
                             Brush.linearGradient(
-                                listOf(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.92f),
-                                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.78f),
-                                    MaterialTheme.colorScheme.surfaceContainerHighest,
-                                ),
+                                when {
+                                    !appearance.backgroundEnabled -> listOf(Color.Transparent, Color.Transparent)
+                                    appearance.backgroundStyle == PlayerBackgroundStyle.SOLID -> listOf(
+                                        MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    )
+                                    appearance.backgroundStyle == PlayerBackgroundStyle.GRADIENT -> listOf(
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                        MaterialTheme.colorScheme.primary,
+                                        MaterialTheme.colorScheme.tertiaryContainer,
+                                    )
+                                    else -> listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.92f),
+                                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.78f),
+                                        MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    )
+                                },
                             ),
                         ),
                     contentAlignment = Alignment.Center,
@@ -998,6 +1014,7 @@ fun PlaybackScreen(
                             }.onFailure { feedback = it.localizedMessage ?: "Playback action failed" }
                         },
                         modifier = Modifier.size(76.dp),
+                        shape = if (appearance.wavyPlayPauseEnabled) WavyPlayShape else CircleShape,
                     ) {
                         Icon(
                             if (playbackSnapshot.status == PlaybackStatus.PLAYING) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,

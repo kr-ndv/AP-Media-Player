@@ -141,7 +141,11 @@ fun PlaybackScreen(
     var shuffleEnabled by rememberSaveable { mutableStateOf(false) }
     var repeatEnabled by rememberSaveable { mutableStateOf(false) }
     var showQueue by rememberSaveable { mutableStateOf(false) }
-    var editableMusicQueue by remember(engine) { mutableStateOf(musicQueue) }
+    var editableMusicQueue by remember(engine) { mutableStateOf(loadSavedMusicQueue(context, musicQueue)) }
+    val updateMusicQueue: (List<MusicQueueEntry>) -> Unit = { updated ->
+        editableMusicQueue = updated
+        saveMusicQueue(context, updated)
+    }
 
     LaunchedEffect(currentMediaUri, currentMediaIsVideo) {
         val uri = currentMediaUri
@@ -499,11 +503,11 @@ fun PlaybackScreen(
                                     IconButton(
                                         onClick = {
                                             if (index > 0) {
-                                                editableMusicQueue = editableMusicQueue.toMutableList().also { queue ->
+                                                updateMusicQueue(editableMusicQueue.toMutableList().also { queue ->
                                                     val previous = queue[index - 1]
                                                     queue[index - 1] = queue[index]
                                                     queue[index] = previous
-                                                }
+                                                })
                                             }
                                         },
                                         enabled = index > 0,
@@ -512,11 +516,11 @@ fun PlaybackScreen(
                                     IconButton(
                                         onClick = {
                                             if (index < editableMusicQueue.lastIndex) {
-                                                editableMusicQueue = editableMusicQueue.toMutableList().also { queue ->
+                                                updateMusicQueue(editableMusicQueue.toMutableList().also { queue ->
                                                     val next = queue[index + 1]
                                                     queue[index + 1] = queue[index]
                                                     queue[index] = next
-                                                }
+                                                })
                                             }
                                         },
                                         enabled = index < editableMusicQueue.lastIndex,
@@ -524,7 +528,7 @@ fun PlaybackScreen(
                                     ) { Text("↓", style = MaterialTheme.typography.titleSmall) }
                                     IconButton(
                                         onClick = {
-                                            editableMusicQueue = editableMusicQueue.filterIndexed { queueIndex, _ -> queueIndex != index }
+                                            updateMusicQueue(editableMusicQueue.filterIndexed { queueIndex, _ -> queueIndex != index })
                                         },
                                         modifier = Modifier.size(32.dp),
                                     ) { Text("×", style = MaterialTheme.typography.titleMedium) }
@@ -761,6 +765,31 @@ fun PlaybackScreen(
         }
     }
 
+}
+
+private fun loadSavedMusicQueue(context: android.content.Context, fallback: List<MusicQueueEntry>): List<MusicQueueEntry> {
+    val raw = context.getSharedPreferences("ap_music_player", android.content.Context.MODE_PRIVATE)
+        .getString("music_queue", null) ?: return fallback
+    return runCatching {
+        val json = JSONArray(raw)
+        List(json.length()) { index ->
+            val item = json.getJSONObject(index)
+            MusicQueueEntry(
+                uri = Uri.parse(item.getString("uri")),
+                title = item.getString("title"),
+                artist = item.optString("artist").takeIf(String::isNotBlank),
+            )
+        }.ifEmpty { fallback }
+    }.getOrElse { fallback }
+}
+
+private fun saveMusicQueue(context: android.content.Context, queue: List<MusicQueueEntry>) {
+    val json = JSONArray()
+    queue.forEach { entry ->
+        json.put(JSONObject().put("uri", entry.uri.toString()).put("title", entry.title).put("artist", entry.artist ?: ""))
+    }
+    context.getSharedPreferences("ap_music_player", android.content.Context.MODE_PRIVATE)
+        .edit().putString("music_queue", json.toString()).apply()
 }
 
 private fun formatPlayerTime(milliseconds: Long): String {

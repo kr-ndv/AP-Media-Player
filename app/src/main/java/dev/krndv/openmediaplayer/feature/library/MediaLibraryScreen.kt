@@ -505,7 +505,7 @@ fun MediaLibraryScreen(
                         }
                     },
                     musicQueue = mediaItems.filter { it.kind == MediaKind.AUDIO }.map { item ->
-                        MusicQueueEntry(uri = item.uri, title = item.title, artist = item.artist)
+                        MusicQueueEntry(uri = item.uri, title = item.title, artist = item.artist, durationMs = item.durationMs)
                     },
                     onQueueTrackSelected = { entry ->
                         mediaItems.firstOrNull { it.uri == entry.uri }?.let(playMedia)

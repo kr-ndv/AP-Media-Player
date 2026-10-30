@@ -17,6 +17,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -143,6 +146,15 @@ fun PlaybackScreen(
     var durationMs by remember(engine) { mutableStateOf(engine.durationMs) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
     var lyricsText by remember(currentMediaUri) { mutableStateOf("") }
+    val parsedLyrics = remember(lyricsText) { parseTimedLyrics(lyricsText) }
+    val activeLyricIndex = parsedLyrics.indexOfLast { it.timeMs <= currentPositionMs }
+    val lyricsListState = rememberLazyListState()
+
+    LaunchedEffect(showLyrics, activeLyricIndex) {
+        if (showLyrics && activeLyricIndex >= 0 && parsedLyrics.isNotEmpty()) {
+            lyricsListState.animateScrollToItem(activeLyricIndex)
+        }
+    }
     var isFavorite by remember(currentMediaUri) {
         mutableStateOf(
             currentMediaUri?.let { uri ->
@@ -867,16 +879,18 @@ fun PlaybackScreen(
                             Text("Load lyrics file")
                         }
                     } else {
-                        val timedLyrics = remember(lyricsText) { parseTimedLyrics(lyricsText) }
-                        if (timedLyrics.isNotEmpty()) {
-                            val activeLine = timedLyrics.indexOfLast { it.timeMs <= currentPositionMs }
-                            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                                timedLyrics.forEachIndexed { index, line ->
+                        if (parsedLyrics.isNotEmpty()) {
+                            LazyColumn(
+                                state = lyricsListState,
+                                verticalArrangement = Arrangement.spacedBy(14.dp),
+                            ) {
+                                itemsIndexed(parsedLyrics) { index, line ->
                                     Text(
                                         line.text,
-                                        style = if (index == activeLine) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyLarge,
-                                        fontWeight = if (index == activeLine) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (index == activeLine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.clickable { engine.seekTo(line.timeMs) },
+                                        style = if (index == activeLyricIndex) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyLarge,
+                                        fontWeight = if (index == activeLyricIndex) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (index == activeLyricIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             }

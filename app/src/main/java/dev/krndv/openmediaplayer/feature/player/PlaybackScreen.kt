@@ -132,6 +132,7 @@ fun PlaybackScreen(
     var videoGestureFeedback by rememberSaveable { mutableStateOf("") }
     var showVideoOptions by rememberSaveable { mutableStateOf(false) }
     var videoOrientation by rememberSaveable { mutableStateOf(context.getSharedPreferences("ap_video_player", android.content.Context.MODE_PRIVATE).getString("orientation", "auto") ?: "auto") }
+    var playbackRate by rememberSaveable { mutableStateOf(1f) }
     var currentPositionMs by remember(engine) { mutableStateOf(engine.currentTimeMs) }
     var durationMs by remember(engine) { mutableStateOf(engine.durationMs) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
@@ -356,6 +357,36 @@ fun PlaybackScreen(
                                 },
                             )
                         }
+                        Text("Playback speed", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge)
+                        listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f).forEach { rate ->
+                            DropdownMenuItem(
+                                text = { Text((if (playbackRate == rate) "✓  " else "") + rate.toString() + "×") },
+                                onClick = {
+                                    runCatching { engine.setPlaybackRate(rate) }
+                                        .onSuccess { playbackRate = rate }
+                                        .onFailure { feedback = it.localizedMessage ?: "Could not change playback speed." }
+                                    showVideoOptions = false
+                                },
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text("Picture-in-picture") },
+                            onClick = {
+                                val activity = context.findActivity()
+                                if (android.os.Build.VERSION.SDK_INT >= 26 && activity != null) {
+                                    runCatching {
+                                        activity.enterPictureInPictureMode(
+                                            android.app.PictureInPictureParams.Builder()
+                                                .setAspectRatio(android.util.Rational(16, 9))
+                                                .build(),
+                                        )
+                                    }.onFailure { feedback = it.localizedMessage ?: "Picture-in-picture is unavailable." }
+                                } else {
+                                    feedback = "Picture-in-picture requires Android 8.0 or later."
+                                }
+                                showVideoOptions = false
+                            },
+                        )
                     }
                 }
             }

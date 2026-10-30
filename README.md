@@ -2,7 +2,7 @@
 
 **AV Music Player** is an open-source Android media player, built with Kotlin, Jetpack Compose and Material 3 Expressive. It is designed around a clean, local-first experience for browsing and playing music and videos on your device.
 
-> **Project status:** Early prototype. Local MediaStore discovery and a LibVLC playback path are implemented, but playback still needs validation on real Android devices. The app is not ready for daily use.
+> **Project status:** Feature-rich development build. The current branch includes local media discovery, audio/video playback, library and player UI, playlists, queue and video playback controls. It still needs hands-on validation on real devices before it should be treated as production-ready.
 
 ## Product direction
 
@@ -16,15 +16,15 @@
 
 ## Current implementation
 
-- Material 3 design foundation and theme showcase components.
-- A local library that requests Android's audio/video permissions, reads indexed media from MediaStore on launch, and supports rescan, title/artist/album search, and separate Music and Videos views.
-- A Material 3-based home screen with expressive container surfaces, icon navigation, media counts and tappable media rows.
-- Player screen with a LibVLC video surface, Android document picker for local audio/video, and a direct-stream URL field.
-- Library selection opens the player after the LibVLC output surface is attached, and the engine reports opening, playing, paused, stopped, ended and playback-error states.
-- Android CI builds the debug app, compiles the instrumentation-test APK, runs unit tests and runs lint. Successful push builds upload a debug APK artifact for 14 days.
+- Kotlin, Jetpack Compose and Material 3 Expressive design system with lavender light/dark palettes, optional dynamic color, system theme mode and branded splash/launcher artwork.
+- Local MediaStore discovery for audio and video, including permission handling, search, rescan, recently played history and in-memory LRU artwork/thumbnail caching.
+- Four primary destinations: Home, Music, Videos and Library. Music supports Songs, Albums, Artists and Playlists views; user-created playlists are stored locally and support adding/removing tracks.
+- Mini player with current artwork and play/pause, plus a Now Playing view with seek, shuffle, repeat, next/previous, playback speed, queue management and external timed-lyrics loading with current-line highlighting and seek-on-tap.
+- Video playback through LibVLC with immersive controls, tap/double-tap seek, brightness/volume gestures, orientation preference, playback speed, audio/subtitle track selection, external subtitle selection, subtitle delay, picture-in-picture, aspect preference, resume position and hardware-decoder preference.
+- Settings for theme, dynamic color, library rescan, player appearance, screen-awake behavior and video playback preferences. Media rows expose Play, Details and Add to playlist actions.
+- Android CI builds the debug app, compiles the instrumentation-test APK, runs unit tests and lint. Successful push builds upload a debug APK artifact for 14 days.
 
-MediaStore discovery is limited to media Android has indexed and to the audio/video collections for which the user grants permission; this is not an unrestricted filesystem crawler. Queues, background playback, audio focus, seeking and subtitle selection are not fully implemented yet. A successful build does not prove that local files or network streams play on a real device. Format support depends on the stream, bundled native components and device.
-
+MediaStore discovery is limited to media Android has indexed and to the audio/video collections for which the user grants permission; this is not an unrestricted filesystem crawler. Background playback service, system media controls, audio focus management, drag-and-drop queue reordering, folder exclusions and lyrics-provider integration are not implemented yet. The queue can be manually reordered with its up/down controls. A successful build does not prove that local files or network streams play correctly on a real device. Format support depends on the stream, bundled native components and device.
 ## Documentation
 
 - Design system: `docs/design-system/`

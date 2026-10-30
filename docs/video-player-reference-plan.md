@@ -1,6 +1,6 @@
-# AP Media Player — Video Player Reference & Integration Plan
+# AV Music Player — Video Player Reference & Integration Plan
 
-This document records the feature direction for the AP Media Player video player, using three public projects as technical references. It is a feature and architecture plan, not a claim that their source code has been copied.
+This document records the feature direction for the AV Music Player video player, using three public projects as technical references. It is a feature and architecture plan, not a claim that their source code has been copied.
 
 ## Reference projects
 

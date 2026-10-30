@@ -274,7 +274,7 @@ fun PlaybackScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
-                IconButton(onClick = { feedback = if (feedback.isBlank()) "Video settings are coming soon." else "" }) {
+                IconButton(onClick = { feedback = if (feedback.isBlank()) "Video playback settings are available from Settings." else "" }) {
                     Icon(Icons.Outlined.MoreVert, contentDescription = "Video options")
                 }
             }
@@ -325,7 +325,7 @@ fun PlaybackScreen(
                     ) {
                         val fraction = if (durationMs > 0) (currentPositionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
                         drawLine(Color.White.copy(alpha = 0.45f), androidx.compose.ui.geometry.Offset(0f, size.height / 2), androidx.compose.ui.geometry.Offset(size.width, size.height / 2), strokeWidth = 4.dp.toPx())
-                        drawLine(Color(0xFFD4B8FF), androidx.compose.ui.geometry.Offset(0f, size.height / 2), androidx.compose.ui.geometry.Offset(size.width * fraction, size.height / 2), strokeWidth = 4.dp.toPx())
+                        drawLine(Color(0xFFB8F36B), androidx.compose.ui.geometry.Offset(0f, size.height / 2), androidx.compose.ui.geometry.Offset(size.width * fraction, size.height / 2), strokeWidth = 4.dp.toPx())
                     }
                     Text(formatPlayerTime(durationMs), color = Color.White, style = MaterialTheme.typography.labelMedium)
                 }
@@ -519,16 +519,7 @@ fun PlaybackScreen(
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    FilterChip(
-                        selected = false,
-                        onClick = { feedback = "Queue controls are coming soon." },
-                        label = { androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.QueueMusic, contentDescription = null); androidx.compose.foundation.layout.Spacer(Modifier.size(6.dp)); Text("Queue") } },
-                    )
-                }
+
             }
             if (statusText.isNotBlank()) {
                 Text(statusText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

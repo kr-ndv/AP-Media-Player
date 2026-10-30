@@ -65,6 +65,46 @@ class LibVlcPlaybackEngine(context: Context) : PlaybackEngine {
         mediaPlayer.setRate(rate)
     }
 
+    data class TrackOption(val id: Int, val name: String)
+
+    @Synchronized
+    fun audioTracks(): List<TrackOption> =
+        if (released) emptyList() else mediaPlayer.audioTracks.orEmpty().map { TrackOption(it.id, it.name ?: "Audio track") }
+
+    @Synchronized
+    fun subtitleTracks(): List<TrackOption> =
+        if (released) emptyList() else mediaPlayer.spuTracks.orEmpty().map { TrackOption(it.id, it.name ?: "Subtitle") }
+
+    @Synchronized
+    fun selectedAudioTrack(): Int = if (released) -1 else mediaPlayer.audioTrack
+
+    @Synchronized
+    fun selectedSubtitleTrack(): Int = if (released) -1 else mediaPlayer.spuTrack
+
+    @Synchronized
+    fun selectAudioTrack(id: Int): Boolean = !released && mediaPlayer.setAudioTrack(id)
+
+    @Synchronized
+    fun selectSubtitleTrack(id: Int): Boolean = !released && mediaPlayer.setSpuTrack(id)
+
+    @Synchronized
+    fun addExternalSubtitle(uri: Uri): Boolean =
+        !released && mediaPlayer.addSlave(Media.Slave.Type.Subtitle, uri, true)
+
+    @Synchronized
+    fun setSubtitleDelayMs(delayMs: Long): Boolean =
+        !released && mediaPlayer.setSpuDelay(delayMs * 1_000L)
+
+    @Synchronized
+    fun setVideoAspectMode(mode: String) {
+        if (released) return
+        when (mode) {
+            "fit", "fill" -> { mediaPlayer.aspectRatio = null; mediaPlayer.scale = 0f }
+            "stretch" -> { mediaPlayer.aspectRatio = "16:9"; mediaPlayer.scale = 0f }
+            "zoom" -> { mediaPlayer.aspectRatio = null; mediaPlayer.scale = 1.25f }
+        }
+    }
+
     private val playerEventListener = MediaPlayer.EventListener { event ->
         val uriScheme = currentUri?.scheme ?: "unknown"
         when (event.type) {

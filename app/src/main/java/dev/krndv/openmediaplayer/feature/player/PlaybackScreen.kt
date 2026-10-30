@@ -984,9 +984,25 @@ fun PlaybackScreen(
                             val width = size.width
                             val fraction = (currentPositionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
                             val y = size.height / 2f
-                            drawLine(audioProgressTrack, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(width, y), strokeWidth = 3.dp.toPx())
-                            drawLine(audioProgressActive, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(width * fraction, y), strokeWidth = 4.dp.toPx())
-                            drawCircle(audioProgressActive, radius = 6.dp.toPx(), center = androidx.compose.ui.geometry.Offset(width * fraction, y))
+                            drawLine(audioProgressTrack, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(width, y), strokeWidth = if (appearance.progressEnabled) 3.dp.toPx() else 2.dp.toPx())
+                            if (!appearance.progressEnabled || appearance.progressStyle == ProgressStyle.SLIM) {
+                                drawLine(audioProgressActive, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(width * fraction, y), strokeWidth = 2.dp.toPx())
+                            } else if (appearance.progressStyle == ProgressStyle.BAR) {
+                                drawLine(audioProgressActive, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(width * fraction, y), strokeWidth = 4.dp.toPx())
+                                drawCircle(audioProgressActive, radius = 6.dp.toPx(), center = androidx.compose.ui.geometry.Offset(width * fraction, y))
+                            } else {
+                                val wave = Path()
+                                val steps = (80 * fraction).toInt().coerceAtLeast(1)
+                                for (step in 0..steps) {
+                                    val progress = step / 80f
+                                    val x = width * progress
+                                    val amplitude = if (appearance.progressStyle == ProgressStyle.WAVY) 4.dp.toPx() else 2.dp.toPx()
+                                    val phase = step * (Math.PI / 8.0)
+                                    val waveY = y + kotlin.math.sin(phase).toFloat() * amplitude
+                                    if (step == 0) wave.moveTo(x, waveY) else wave.lineTo(x, waveY)
+                                }
+                                drawPath(wave, audioProgressActive, style = Stroke(width = 3.dp.toPx()))
+                            }
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(formatPlayerTime(currentPositionMs), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

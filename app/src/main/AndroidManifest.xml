@@ -9,8 +9,8 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher"
+        android:icon="@drawable/av_music_player_icon"
+        android:roundIcon="@drawable/av_music_player_icon"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.OpenMediaPlayer">

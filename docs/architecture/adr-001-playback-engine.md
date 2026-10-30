@@ -5,7 +5,7 @@
 
 ## Context
 
-OpenMediaPlayer aims to handle local audio/video and a broad range of network streams. The playback implementation must remain replaceable so UI and media-library code do not become coupled to one vendor API.
+AV Music Player aims to handle local audio/video and a broad range of network streams. The playback implementation must remain replaceable so UI and media-library code do not become coupled to one vendor API.
 
 ## Decision
 

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
@@ -93,6 +94,8 @@ import dev.krndv.openmediaplayer.core.playback.PlaybackStatus
 import java.util.Locale
 import org.videolan.libvlc.util.VLCVideoLayout
 
+data class MusicQueueEntry(val uri: Uri, val title: String, val artist: String?)
+
 @Composable
 fun PlaybackScreen(
     engine: LibVlcPlaybackEngine,
@@ -108,6 +111,8 @@ fun PlaybackScreen(
     onExitPlayer: () -> Unit = {},
     onPreviousTrack: () -> Unit = {},
     onNextTrack: () -> Unit = {},
+    musicQueue: List<MusicQueueEntry> = emptyList(),
+    onQueueTrackSelected: (MusicQueueEntry) -> Unit = {},
 ) {
     val context = LocalContext.current
     var streamUrl by rememberSaveable { mutableStateOf("") }
@@ -125,6 +130,7 @@ fun PlaybackScreen(
     var isFavorite by rememberSaveable { mutableStateOf(false) }
     var shuffleEnabled by rememberSaveable { mutableStateOf(false) }
     var repeatEnabled by rememberSaveable { mutableStateOf(false) }
+    var showQueue by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(currentMediaUri, currentMediaIsVideo) {
         val uri = currentMediaUri
@@ -389,7 +395,7 @@ fun PlaybackScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
-                IconButton(onClick = { feedback = "Queue controls will be added with the music queue." }) {
+                IconButton(onClick = { showQueue = !showQueue }) {
                     Icon(
                         Icons.Outlined.QueueMusic,
                         contentDescription = "Open queue",
@@ -420,7 +426,49 @@ fun PlaybackScreen(
                 )
             }
 
-            if (showLyrics) {
+            if (showQueue) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 16.dp, bottomEnd = 28.dp, bottomStart = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("PLAYING QUEUE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                                Text("${musicQueue.size} songs", style = MaterialTheme.typography.titleMedium)
+                            }
+                            TextButton(onClick = { showQueue = false }) { Text("Close") }
+                        }
+                        if (musicQueue.isEmpty()) {
+                            Text("No songs in the library queue yet.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            musicQueue.take(12).forEachIndexed { index, item ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth()
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .clickable { onQueueTrackSelected(item) }
+                                        .background(if (item.uri == currentMediaUri) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    Text((index + 1).toString().padStart(2, '0'), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(item.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                                        Text(item.artist ?: "Unknown artist", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                                    }
+                                    if (item.uri == currentMediaUri) Icon(Icons.Outlined.MusicNote, contentDescription = "Currently playing", tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                            if (musicQueue.size > 12) Text("Showing the next 12 of ${musicQueue.size} songs", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            } else if (showLyrics) {
                 Column(
                     modifier = Modifier.fillMaxWidth().heightIn(min = 360.dp).padding(horizontal = 10.dp, vertical = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp),

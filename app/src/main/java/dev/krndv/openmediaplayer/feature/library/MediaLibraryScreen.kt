@@ -359,20 +359,6 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                     ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (!activeMediaIsVideo) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = {
-                            requestedUri = null
-                            requestedTitle = null
-                            selectedDestinationName = MediaDestination.entries
-                                .firstOrNull { it.name == previousDestinationName && !it.isPlayer }
-                                ?.name ?: MediaDestination.LIBRARY.name
-                        }) {
-                            Icon(Icons.Outlined.ArrowBack, contentDescription = "Back to library")
-                        }
-                        Text("Now Playing", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                    }
-                }
                 PlaybackScreen(
                     engine = engine,
                     requestedUri = requestedUri,

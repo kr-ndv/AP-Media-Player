@@ -513,7 +513,7 @@ fun MediaLibraryScreen(
                 )
             }
         } else {
-            val visibleItems = mediaItems
+            val filteredItems = mediaItems
                 .asSequence()
                 .filter { destination.kind == null || it.kind == destination.kind }
                 .filter { item ->
@@ -528,6 +528,15 @@ fun MediaLibraryScreen(
                         item.album.orEmpty().contains(query, ignoreCase = true)
                 }
                 .toList()
+            val visibleItems = when {
+                destination == MediaDestination.MUSIC && musicCategory == "Albums" ->
+                    filteredItems.filter { it.kind == MediaKind.AUDIO }.distinctBy { it.album ?: "Unknown album" }
+                        .map { it.copy(title = it.album ?: "Unknown album") }
+                destination == MediaDestination.MUSIC && musicCategory == "Artists" ->
+                    filteredItems.filter { it.kind == MediaKind.AUDIO }.distinctBy { it.artist ?: "Unknown artist" }
+                        .map { it.copy(title = it.artist ?: "Unknown artist") }
+                else -> filteredItems
+            }
 
             LazyColumn(
                 modifier = Modifier

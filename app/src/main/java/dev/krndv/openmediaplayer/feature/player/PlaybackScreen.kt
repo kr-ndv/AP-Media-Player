@@ -126,6 +126,8 @@ fun PlaybackScreen(
     var currentMediaUri by remember(engine, initialUri) { mutableStateOf(initialUri) }
     var artworkBitmap by remember(currentMediaUri, currentMediaIsVideo) { mutableStateOf<Bitmap?>(null) }
     var videoLayout by remember { mutableStateOf<VLCVideoLayout?>(null) }
+    var showVideoControls by rememberSaveable { mutableStateOf(true) }
+    var videoGestureFeedback by rememberSaveable { mutableStateOf("") }
     var currentPositionMs by remember(engine) { mutableStateOf(engine.currentTimeMs) }
     var durationMs by remember(engine) { mutableStateOf(engine.durationMs) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
@@ -164,6 +166,20 @@ fun PlaybackScreen(
                     }
                 }
             }.getOrNull()
+        }
+    }
+
+    LaunchedEffect(showVideoControls, playbackSnapshot.status, currentMediaIsVideo) {
+        if (showVideoControls && currentMediaIsVideo && playbackSnapshot.status == PlaybackStatus.PLAYING) {
+            delay(3_500L)
+            showVideoControls = false
+        }
+    }
+
+    LaunchedEffect(videoGestureFeedback) {
+        if (videoGestureFeedback.isNotBlank()) {
+            delay(850L)
+            videoGestureFeedback = ""
         }
     }
 
@@ -302,7 +318,7 @@ fun PlaybackScreen(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Row(
+            if (showVideoControls) Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -328,7 +344,29 @@ fun PlaybackScreen(
                     .background(Color.Black),
             ) {
                 AndroidView(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().pointerInput(durationMs, currentPositionMs, playbackSnapshot.status) {
+                        detectTapGestures(
+                            onTap = { showVideoControls = !showVideoControls },
+                            onDoubleTap = { point ->
+                                when {
+                                    point.x < size.width * 0.38f -> {
+                                        engine.seekTo((currentPositionMs - 10_000L).coerceAtLeast(0L))
+                                        videoGestureFeedback = "−10 seconds"
+                                    }
+                                    point.x > size.width * 0.62f -> {
+                                        engine.seekTo((currentPositionMs + 10_000L).coerceAtMost(durationMs))
+                                        videoGestureFeedback = "+10 seconds"
+                                    }
+                                    else -> {
+                                        val wasPlaying = playbackSnapshot.status == PlaybackStatus.PLAYING
+                                        if (wasPlaying) engine.pause() else engine.play()
+                                        videoGestureFeedback = if (wasPlaying) "Paused" else "Playing"
+                                    }
+                                }
+                                showVideoControls = true
+                            },
+                        )
+                    },
                     factory = { viewContext ->
                         VLCVideoLayout(viewContext).also {
                             it.layoutParams = FrameLayout.LayoutParams(
@@ -341,7 +379,21 @@ fun PlaybackScreen(
                     },
                     update = { layout -> if (videoLayout !== layout) videoLayout = layout },
                 )
-                if (playbackSnapshot.status != PlaybackStatus.PLAYING) {
+                if (videoGestureFeedback.isNotBlank()) {
+                    Surface(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color.Black.copy(alpha = 0.68f),
+                        shape = RoundedCornerShape(24.dp),
+                    ) {
+                        Text(
+                            videoGestureFeedback,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
+                }
+                if (playbackSnapshot.status != PlaybackStatus.PLAYING && showVideoControls) {
                     FilledIconButton(
                         onClick = { runCatching { engine.play() } },
                         modifier = Modifier.align(Alignment.Center).size(68.dp),
@@ -349,7 +401,7 @@ fun PlaybackScreen(
                         Icon(Icons.Outlined.PlayArrow, contentDescription = "Play video", modifier = Modifier.size(36.dp))
                     }
                 }
-                Row(
+                if (showVideoControls) Row(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                         .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.86f))))
                         .padding(horizontal = 14.dp, vertical = 12.dp),
@@ -372,7 +424,7 @@ fun PlaybackScreen(
                     Text(formatPlayerTime(durationMs), color = Color.White, style = MaterialTheme.typography.labelMedium)
                 }
             }
-            Row(
+            if (showVideoControls) Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,

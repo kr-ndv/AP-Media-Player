@@ -87,6 +87,7 @@ import androidx.core.content.ContextCompat
 import dev.krndv.openmediaplayer.core.playback.LibVlcPlaybackEngine
 import dev.krndv.openmediaplayer.core.playback.PlaybackStateListener
 import dev.krndv.openmediaplayer.core.playback.PlaybackStatus
+import dev.krndv.openmediaplayer.feature.player.MusicQueueEntry
 import dev.krndv.openmediaplayer.feature.player.PlaybackScreen
 import dev.krndv.openmediaplayer.feature.player.PlayerAppearance
 import dev.krndv.openmediaplayer.feature.player.PlayerAppearanceSettingsScreen
@@ -396,6 +397,12 @@ fun MediaLibraryScreen(engine: LibVlcPlaybackEngine) {
                             val index = audioQueue.indexOfFirst { it.uri == activeMediaUri }
                             playMedia(audioQueue[if (index < 0 || index == audioQueue.lastIndex) 0 else index + 1])
                         }
+                    },
+                    musicQueue = mediaItems.filter { it.kind == MediaKind.AUDIO }.map { item ->
+                        MusicQueueEntry(uri = item.uri, title = item.title, artist = item.artist)
+                    },
+                    onQueueTrackSelected = { entry ->
+                        mediaItems.firstOrNull { it.uri == entry.uri }?.let(playMedia)
                     },
                 )
             }

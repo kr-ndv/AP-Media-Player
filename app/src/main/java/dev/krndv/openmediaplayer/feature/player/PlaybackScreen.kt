@@ -875,7 +875,7 @@ fun PlaybackScreen(
                 }
             } else if (showLyrics) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 360.dp).padding(horizontal = 10.dp, vertical = 20.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 360.dp, max = 420.dp).padding(horizontal = 10.dp, vertical = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
                     Text(currentMediaTitle.ifBlank { "Lyrics" }, style = MaterialTheme.typography.titleLarge)

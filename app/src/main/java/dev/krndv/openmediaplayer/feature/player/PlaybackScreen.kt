@@ -340,6 +340,19 @@ fun PlaybackScreen(
         }
     }
 
+    DisposableEffect(appearance.keepScreenOnWhilePlaying, playbackSnapshot.status, currentMediaTitle) {
+        val activity = context.findActivity()
+        val keepAwake = appearance.keepScreenOnWhilePlaying &&
+            playbackSnapshot.status == PlaybackStatus.PLAYING && currentMediaTitle.isNotBlank()
+        if (activity != null) {
+            if (keepAwake) activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            else activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            if (keepAwake) activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
     // Attach the LibVLC output surface before autoplaying a library selection.
     DisposableEffect(videoLayout) {
         val layout = videoLayout

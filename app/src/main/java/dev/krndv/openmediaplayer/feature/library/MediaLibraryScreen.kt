@@ -911,7 +911,7 @@ private fun EmptyLibraryCard(
 }
 
 private object MediaArtworkCache {
-    private val cache = android.util.LruCache<String, Bitmap>(
+    private val cache = object : android.util.LruCache<String, Bitmap>(
         (Runtime.getRuntime().maxMemory() / 8L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
     ) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount

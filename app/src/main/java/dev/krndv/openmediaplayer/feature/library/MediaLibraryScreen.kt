@@ -583,7 +583,7 @@ fun MediaLibraryScreen(
                         }
                     }
 
-                    item {
+                    if (destination != MediaDestination.COLLECTIONS) item {
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -595,7 +595,7 @@ fun MediaLibraryScreen(
                         )
                     }
 
-                    if (destination != MediaDestination.LIBRARY) {
+                    if (destination != MediaDestination.LIBRARY && destination != MediaDestination.COLLECTIONS) {
                         item {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -835,7 +835,7 @@ fun MediaLibraryScreen(
                         }
                     }
 
-                    if (destination != MediaDestination.LIBRARY) {
+                    if (destination != MediaDestination.LIBRARY && destination != MediaDestination.COLLECTIONS) {
                         item {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),

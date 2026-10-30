@@ -544,6 +544,7 @@ fun MediaLibraryScreen(
                 else -> filteredItems
             }
             val recentlyPlayedItems = recentMediaUris.mapNotNull { uri -> mediaItems.firstOrNull { it.uri.toString() == uri } }
+    val homeMediaItems = if (recentlyPlayedItems.isNotEmpty()) recentlyPlayedItems else visibleItems.take(4)
 
             LazyColumn(
                 modifier = Modifier
@@ -733,9 +734,7 @@ fun MediaLibraryScreen(
                             }
                         }
                     }
-                    if (destination == MediaDestination.LIBRARY || destination == MediaDestination.MUSIC ||
-                        destination == MediaDestination.VIDEOS
-                    ) {
+                    if (destination == MediaDestination.LIBRARY) {
                         item {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Row(
@@ -743,7 +742,7 @@ fun MediaLibraryScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
-                                        text = if (destination == MediaDestination.VIDEOS) "Recent videos" else "Recently added",
+                                        text = if (recentlyPlayedItems.isNotEmpty()) "Recently played" else "Recently added",
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.SemiBold,
                                         modifier = Modifier.weight(1f),
@@ -758,7 +757,7 @@ fun MediaLibraryScreen(
                                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 ) {
-                                    visibleItems.take(4).forEachIndexed { index, media ->
+                                    homeMediaItems.forEachIndexed { index, media ->
                                         Column(
                                             modifier = Modifier.width(126.dp),
                                             verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -837,6 +836,22 @@ fun MediaLibraryScreen(
                                         icon = Icons.Outlined.Movie,
                                         onClick = { selectedDestinationName = MediaDestination.VIDEOS.name },
                                     )
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    QuickPickCard(
+                                        modifier = Modifier.weight(1f),
+                                        title = "Favorites",
+                                        subtitle = "${mediaItems.count { it.kind == MediaKind.AUDIO && context.getSharedPreferences("ap_music_player", Context.MODE_PRIVATE).getBoolean("favorite:${it.uri}", false) }} saved songs",
+                                        icon = Icons.Outlined.Favorite,
+                                        onClick = { selectedDestinationName = MediaDestination.FAVORITES.name },
+                                    )
+                                    QuickPickCard(
+                                        modifier = Modifier.weight(1f),
+                                        title = "Playlists",
+                                        subtitle = "${playlists.size} collections",
+                                        icon = Icons.Outlined.FolderOpen,
+                                        onClick = { selectedPlaylistId = null; selectedDestinationName = MediaDestination.COLLECTIONS.name },
+                                    )
+                                }
                                 }
                             }
                         }

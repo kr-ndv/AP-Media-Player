@@ -615,6 +615,117 @@ fun MediaLibraryScreen(
                         }
                     }
 
+                    if (destination == MediaDestination.MUSIC) {
+                        item {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                listOf("Songs", "Albums", "Artists", "Playlists").forEach { category ->
+                                    FilterChip(
+                                        selected = musicCategory == category,
+                                        onClick = {
+                                            musicCategory = category
+                                            if (category == "Playlists") selectedDestinationName = MediaDestination.COLLECTIONS.name
+                                        },
+                                        label = { Text(category) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    if (destination == MediaDestination.COLLECTIONS) {
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            if (selectedPlaylistId == null) "Playlists" else playlists.firstOrNull { it.id == selectedPlaylistId }?.name ?: "Playlist",
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
+                                        Text(
+                                            if (selectedPlaylistId == null) "${playlists.size} playlists" else "Manage songs in this playlist",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    if (selectedPlaylistId == null) {
+                                        Button(onClick = { showCreatePlaylistDialog = true }) { Text("Create playlist") }
+                                    } else {
+                                        TextButton(onClick = { selectedPlaylistId = null }) { Text("Back") }
+                                    }
+                                }
+                                if (selectedPlaylistId == null) {
+                                    if (playlists.isEmpty()) {
+                                        EmptyLibraryCard(
+                                            title = "No playlists yet",
+                                            description = "Create a playlist, then add songs from your music library.",
+                                            onRefresh = { showCreatePlaylistDialog = true },
+                                        )
+                                    } else {
+                                        playlists.forEach { playlist ->
+                                            Card(
+                                                onClick = { selectedPlaylistId = playlist.id },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                shape = MaterialTheme.shapes.large,
+                                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth().padding(14.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                                ) {
+                                                    Surface(
+                                                        modifier = Modifier.size(48.dp),
+                                                        shape = RoundedCornerShape(14.dp),
+                                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    ) {
+                                                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.MusicNote, contentDescription = null) }
+                                                    }
+                                                    Column(Modifier.weight(1f)) {
+                                                        Text(playlist.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                                        Text("${playlist.mediaUris.size} songs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                    TextButton(onClick = { playlists = playlistRepository.delete(playlist.id) }) { Text("Delete") }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    val playlist = playlists.firstOrNull { it.id == selectedPlaylistId }
+                                    val trackUris = playlist?.mediaUris.orEmpty().toSet()
+                                    Text("In this playlist", style = MaterialTheme.typography.titleMedium)
+                                    val savedTracks = mediaItems.filter { it.uri.toString() in trackUris }
+                                    if (savedTracks.isEmpty()) {
+                                        Text("No songs added yet. Choose tracks below.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    } else {
+                                        savedTracks.forEach { track ->
+                                            MediaItemCard(
+                                                item = track,
+                                                onClick = { playMedia(track) },
+                                                trailingAction = {
+                                                    TextButton(onClick = {
+                                                        playlists = playlistRepository.removeTrack(selectedPlaylistId!!, track.uri.toString())
+                                                    }) { Text("Remove") }
+                                                },
+                                            )
+                                        }
+                                    }
+                                    Text("Add songs", style = MaterialTheme.typography.titleMedium)
+                                    mediaItems.filter { it.kind == MediaKind.AUDIO && it.uri.toString() !in trackUris }.take(40).forEach { track ->
+                                        MediaItemCard(
+                                            item = track,
+                                            onClick = { playMedia(track) },
+                                            trailingAction = {
+                                                TextButton(onClick = {
+                                                    playlists = playlistRepository.addTrack(selectedPlaylistId!!, track.uri.toString())
+                                                }) { Text("Add") }
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                     if (destination == MediaDestination.LIBRARY || destination == MediaDestination.MUSIC ||
                         destination == MediaDestination.VIDEOS
                     ) {

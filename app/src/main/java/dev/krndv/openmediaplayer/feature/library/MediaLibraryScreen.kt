@@ -136,6 +136,7 @@ fun MediaLibraryScreen(
     var newPlaylistName by rememberSaveable { mutableStateOf("") }
     var musicCategory by rememberSaveable { mutableStateOf("Songs") }
     var mediaDetailsItem by remember { mutableStateOf<LocalMediaItem?>(null) }
+    var mediaToAddToPlaylist by remember { mutableStateOf<LocalMediaItem?>(null) }
     var recentMediaUris by remember(context) {
         mutableStateOf(context.getSharedPreferences("av_music_player_settings", Context.MODE_PRIVATE).getString("recently_played", null).orEmpty().split("\n").filter(String::isNotBlank))
     }
@@ -182,6 +183,36 @@ fun MediaLibraryScreen(
         )
     }
 
+    mediaToAddToPlaylist?.let { item ->
+        AlertDialog(
+            onDismissRequest = { mediaToAddToPlaylist = null },
+            title = { Text("Add to playlist") },
+            text = {
+                if (playlists.isEmpty()) {
+                    Text("Create a playlist first to save this song.")
+                } else {
+                    Column(
+                        modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        playlists.forEach { playlist ->
+                            TextButton(
+                                onClick = {
+                                    playlists = playlistRepository.addTrack(playlist.id, item.uri.toString())
+                                    mediaToAddToPlaylist = null
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text("${playlist.name} · ${playlist.mediaUris.size} songs") }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { mediaToAddToPlaylist = null; showCreatePlaylistDialog = true }) { Text("Create playlist") }
+            },
+            dismissButton = { TextButton(onClick = { mediaToAddToPlaylist = null }) { Text("Cancel") } },
+        )
+    }
     if (showCreatePlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showCreatePlaylistDialog = false },
@@ -978,7 +1009,7 @@ fun MediaLibraryScreen(
                                 items = visibleItems,
                                 key = { "${it.kind.name}_${it.id}" },
                             ) { item ->
-                                MediaItemCard(item = item, onClick = { playMedia(item) }, onDetails = { mediaDetailsItem = item })
+                                MediaItemCard(item = item, onClick = { playMedia(item) }, onDetails = { mediaDetailsItem = item }, onAddToPlaylist = { mediaToAddToPlaylist = item })
                             }
                         }
                     } else if (!isScanning && visibleItems.isEmpty()) {
@@ -1347,6 +1378,7 @@ private fun MediaItemCard(
     item: LocalMediaItem,
     onClick: () -> Unit,
     onDetails: () -> Unit = {},
+    onAddToPlaylist: () -> Unit = {},
     trailingAction: (@Composable () -> Unit)? = null,
 ) {
     Card(
@@ -1423,6 +1455,7 @@ private fun MediaItemCard(
                     DropdownMenu(expanded = showActions, onDismissRequest = { showActions = false }) {
                         DropdownMenuItem(text = { Text("Play") }, onClick = { showActions = false; onClick() })
                         DropdownMenuItem(text = { Text("Details") }, onClick = { showActions = false; onDetails() })
+                        DropdownMenuItem(text = { Text("Add to playlist") }, onClick = { showActions = false; onAddToPlaylist() })
                     }
                 }
             }

@@ -92,6 +92,8 @@ import dev.krndv.openmediaplayer.core.playback.PlaybackSnapshot
 import dev.krndv.openmediaplayer.core.playback.PlaybackStateListener
 import dev.krndv.openmediaplayer.core.playback.PlaybackStatus
 import java.util.Locale
+import org.json.JSONArray
+import org.json.JSONObject
 import org.videolan.libvlc.util.VLCVideoLayout
 
 data class MusicQueueEntry(val uri: Uri, val title: String, val artist: String?)
@@ -128,7 +130,14 @@ fun PlaybackScreen(
     var durationMs by remember(engine) { mutableStateOf(engine.durationMs) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
     var lyricsText by remember(currentMediaUri) { mutableStateOf("") }
-    var isFavorite by rememberSaveable { mutableStateOf(false) }
+    var isFavorite by remember(currentMediaUri) {
+        mutableStateOf(
+            currentMediaUri?.let { uri ->
+                context.getSharedPreferences("ap_music_player", android.content.Context.MODE_PRIVATE)
+                    .getBoolean("favorite:$uri", false)
+            } ?: false,
+        )
+    }
     var shuffleEnabled by rememberSaveable { mutableStateOf(false) }
     var repeatEnabled by rememberSaveable { mutableStateOf(false) }
     var showQueue by rememberSaveable { mutableStateOf(false) }
@@ -610,7 +619,13 @@ fun PlaybackScreen(
                         )
                         Text(currentMediaArtist.ifBlank { "On this device" }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    IconButton(onClick = { isFavorite = !isFavorite }) {
+                    IconButton(onClick = {
+                        isFavorite = !isFavorite
+                        currentMediaUri?.let { uri ->
+                            context.getSharedPreferences("ap_music_player", android.content.Context.MODE_PRIVATE)
+                                .edit().putBoolean("favorite:$uri", isFavorite).apply()
+                        }
+                    }) {
                         Icon(
                             if (isFavorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
                             contentDescription = if (isFavorite) "Remove from favourites" else "Add to favourites",

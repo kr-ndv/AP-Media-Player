@@ -808,7 +808,7 @@ private fun saveMusicQueue(context: android.content.Context, queue: List<MusicQu
 private data class TimedLyricLine(val timeMs: Long, val text: String)
 
 private fun parseTimedLyrics(source: String): List<TimedLyricLine> {
-    val timestampPattern = Regex("""\\[(\\d{1,2}):(\\d{2})(?:\\.(\\d{1,3}))?]""")
+    val timestampPattern = Regex("""\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?]""")
     return source.lineSequence().flatMap { rawLine ->
         val matches = timestampPattern.findAll(rawLine).toList()
         if (matches.isEmpty()) {

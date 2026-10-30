@@ -133,6 +133,10 @@ fun PlaybackScreen(
     var showVideoOptions by rememberSaveable { mutableStateOf(false) }
     var videoOrientation by rememberSaveable { mutableStateOf(context.getSharedPreferences("ap_video_player", android.content.Context.MODE_PRIVATE).getString("orientation", "auto") ?: "auto") }
     var playbackRate by rememberSaveable { mutableStateOf(1f) }
+    var videoAspectMode by rememberSaveable { mutableStateOf("fit") }
+    var audioTrackOptions by remember { mutableStateOf(emptyList<LibVlcPlaybackEngine.TrackOption>()) }
+    var subtitleTrackOptions by remember { mutableStateOf(emptyList<LibVlcPlaybackEngine.TrackOption>()) }
+    var subtitleDelayMs by rememberSaveable { mutableStateOf(0L) }
     var currentPositionMs by remember(engine) { mutableStateOf(engine.currentTimeMs) }
     var durationMs by remember(engine) { mutableStateOf(engine.durationMs) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
@@ -196,6 +200,20 @@ fun PlaybackScreen(
         }
     }
 
+    LaunchedEffect(engine, currentMediaUri, currentMediaIsVideo, playbackSnapshot.status) {
+        if (currentMediaIsVideo && currentMediaUri != null) {
+            repeat(8) {
+                delay(500L)
+                audioTrackOptions = engine.audioTracks()
+                subtitleTrackOptions = engine.subtitleTracks()
+                if (audioTrackOptions.isNotEmpty()) return@repeat
+            }
+        } else {
+            audioTrackOptions = emptyList()
+            subtitleTrackOptions = emptyList()
+        }
+    }
+
     LaunchedEffect(engine, currentMediaUri, currentMediaIsVideo) {
         val uri = currentMediaUri
         if (uri != null && currentMediaIsVideo) {
@@ -243,6 +261,20 @@ fun PlaybackScreen(
             lyricsText = runCatching {
                 context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }.orEmpty()
             }.getOrElse { "Could not read this lyrics file." }
+        }
+    }
+
+    val subtitlePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri: Uri? ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                engine.addExternalSubtitle(uri)
+            }.onSuccess { added ->
+                feedback = if (added) "External subtitle loaded." else "LibVLC could not add this subtitle."
+                subtitleTrackOptions = engine.subtitleTracks()
+            }.onFailure { feedback = it.localizedMessage ?: "Could not load subtitle." }
         }
     }
 
@@ -386,6 +418,62 @@ fun PlaybackScreen(
                                 },
                             )
                         }
+                        Text("Video fit", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge)
+                        listOf("fit" to "Fit", "fill" to "Fill", "stretch" to "Stretch", "zoom" to "Zoom").forEach { (mode, label) ->
+                            DropdownMenuItem(
+                                text = { Text((if (videoAspectMode == mode) "✓  " else "") + label) },
+                                onClick = {
+                                    videoAspectMode = mode
+                                    engine.setVideoAspectMode(mode)
+                                    context.getSharedPreferences("ap_video_player", android.content.Context.MODE_PRIVATE).edit().putString("aspect_mode", mode).apply()
+                                    showVideoOptions = false
+                                },
+                            )
+                        }
+                        Text("Audio track", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge)
+                        if (audioTrackOptions.isEmpty()) {
+                            DropdownMenuItem(text = { Text("No audio track information") }, onClick = { showVideoOptions = false }, enabled = false)
+                        } else {
+                            audioTrackOptions.forEach { track ->
+                                DropdownMenuItem(
+                                    text = { Text((if (engine.selectedAudioTrack() == track.id) "✓  " else "") + track.name) },
+                                    onClick = {
+                                        if (!engine.selectAudioTrack(track.id)) feedback = "Could not select audio track."
+                                        showVideoOptions = false
+                                    },
+                                )
+                            }
+                        }
+                        Text("Subtitles", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge)
+                        DropdownMenuItem(text = { Text("Load external subtitle…") }, onClick = {
+                            showVideoOptions = false
+                            subtitlePicker.launch(arrayOf("text/*", "application/x-subrip", "application/octet-stream"))
+                        })
+                        DropdownMenuItem(text = { Text("Disable subtitles") }, onClick = {
+                            engine.selectSubtitleTrack(-1)
+                            showVideoOptions = false
+                        })
+                        subtitleTrackOptions.filter { it.id >= 0 }.forEach { track ->
+                            DropdownMenuItem(
+                                text = { Text((if (engine.selectedSubtitleTrack() == track.id) "✓  " else "") + track.name) },
+                                onClick = {
+                                    if (!engine.selectSubtitleTrack(track.id)) feedback = "Could not select subtitle track."
+                                    showVideoOptions = false
+                                },
+                            )
+                        }
+                        DropdownMenuItem(text = { Text("Subtitle delay − 250 ms") }, onClick = {
+                            subtitleDelayMs -= 250L
+                            engine.setSubtitleDelayMs(subtitleDelayMs)
+                        })
+                        DropdownMenuItem(text = { Text("Subtitle delay + 250 ms") }, onClick = {
+                            subtitleDelayMs += 250L
+                            engine.setSubtitleDelayMs(subtitleDelayMs)
+                        })
+                        DropdownMenuItem(text = { Text("Reset subtitle delay (" + subtitleDelayMs + " ms)") }, onClick = {
+                            subtitleDelayMs = 0L
+                            engine.setSubtitleDelayMs(0L)
+                        })
                         Text("Playback speed", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge)
                         listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f).forEach { rate ->
                             DropdownMenuItem(

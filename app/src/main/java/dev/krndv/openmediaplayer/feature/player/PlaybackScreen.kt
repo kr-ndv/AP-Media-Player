@@ -656,6 +656,16 @@ fun PlaybackScreen(
                     },
                     update = { layout -> if (videoLayout !== layout) videoLayout = layout },
                 )
+                if (gestureSide == "brightness" || gestureSide == "volume") {
+                    VerticalGestureIndicator(
+                        label = if (gestureSide == "brightness") "Brightness" else "Volume",
+                        percent = gesturePercent,
+                        modifier = Modifier
+                            .align(if (gestureSide == "brightness") Alignment.CenterStart else Alignment.CenterEnd)
+                            .padding(horizontal = 14.dp),
+                    )
+                }
+
                 if (videoGestureFeedback.isNotBlank()) {
                     Surface(
                         modifier = Modifier.align(Alignment.Center),
@@ -1160,6 +1170,37 @@ fun PlaybackScreen(
         }
     }
 
+}
+
+@Composable
+private fun VerticalGestureIndicator(
+    label: String,
+    percent: Float,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        color = Color.Black.copy(alpha = 0.72f),
+        shape = RoundedCornerShape(22.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("${(percent.coerceIn(0f, 1f) * 100).toInt()}%", color = Color.White, style = MaterialTheme.typography.labelMedium)
+            Canvas(modifier = Modifier.width(12.dp).height(112.dp)) {
+                val centerX = size.width / 2f
+                val top = 4.dp.toPx()
+                val bottom = size.height - top
+                drawLine(Color.White.copy(alpha = 0.34f), androidx.compose.ui.geometry.Offset(centerX, top), androidx.compose.ui.geometry.Offset(centerX, bottom), strokeWidth = 5.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                val valueY = bottom - (bottom - top) * percent.coerceIn(0f, 1f)
+                drawLine(Color(0xFFB69ADB), androidx.compose.ui.geometry.Offset(centerX, valueY), androidx.compose.ui.geometry.Offset(centerX, bottom), strokeWidth = 5.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                drawCircle(Color.White, radius = 5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(centerX, valueY))
+            }
+            Text(label, color = Color.White, style = MaterialTheme.typography.labelSmall)
+        }
+    }
 }
 
 private fun loadSavedMusicQueue(context: android.content.Context, fallback: List<MusicQueueEntry>): List<MusicQueueEntry> {

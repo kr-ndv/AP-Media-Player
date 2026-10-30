@@ -109,8 +109,8 @@ fun PlaybackScreen(
     onRequestConsumed: () -> Unit = {},
     onMediaChanged: (title: String, isVideo: Boolean) -> Unit = { _, _ -> },
     onExitPlayer: () -> Unit = {},
-    onPreviousTrack: () -> Unit = {},
-    onNextTrack: () -> Unit = {},
+    onPreviousTrack: (shuffle: Boolean) -> Unit = {},
+    onNextTrack: (shuffle: Boolean) -> Unit = {},
     musicQueue: List<MusicQueueEntry> = emptyList(),
     onQueueTrackSelected: (MusicQueueEntry) -> Unit = {},
 ) {
@@ -158,6 +158,18 @@ fun PlaybackScreen(
             currentPositionMs = engine.currentTimeMs
             durationMs = engine.durationMs
             delay(if (playbackSnapshot.status == PlaybackStatus.PLAYING) 350L else 900L)
+        }
+    }
+
+    LaunchedEffect(playbackSnapshot.status, repeatEnabled, currentMediaUri, currentMediaIsVideo) {
+        if (
+            playbackSnapshot.status == PlaybackStatus.ENDED &&
+            repeatEnabled &&
+            !currentMediaIsVideo &&
+            currentMediaUri != null
+        ) {
+            runCatching { engine.open(currentMediaUri!!, autoplay = true) }
+                .onFailure { feedback = it.localizedMessage ?: "Could not repeat this track." }
         }
     }
 
@@ -624,7 +636,7 @@ fun PlaybackScreen(
                     IconButton(onClick = { shuffleEnabled = !shuffleEnabled }) {
                         Icon(Icons.Outlined.Shuffle, contentDescription = "Shuffle", tint = if (shuffleEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    IconButton(onClick = onPreviousTrack) {
+                    IconButton(onClick = { onPreviousTrack(shuffleEnabled) }) {
                         Icon(Icons.Outlined.SkipPrevious, contentDescription = "Previous track")
                     }
                     FilledIconButton(
@@ -642,7 +654,7 @@ fun PlaybackScreen(
                             modifier = Modifier.size(38.dp),
                         )
                     }
-                    IconButton(onClick = onNextTrack) {
+                    IconButton(onClick = { onNextTrack(shuffleEnabled) }) {
                         Icon(Icons.Outlined.SkipNext, contentDescription = "Next track")
                     }
                     IconButton(onClick = { repeatEnabled = !repeatEnabled }) {

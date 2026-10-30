@@ -27,11 +27,15 @@ jobs:
       - name: Build and verify
         run: ./gradlew --no-daemon assembleDebug assembleDebugAndroidTest testDebugUnitTest lintDebug
 
+      - name: Rename debug APK
+        if: success() && github.event_name == 'push'
+        run: cp app/build/outputs/apk/debug/app-debug.apk AV-Music-Player-debug.apk
+
       - name: Upload debug APK
         if: success() && github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
-          name: OpenMediaPlayer-debug-${{ github.sha }}
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: AV-Music-Player-debug-${{ github.sha }}
+          path: AV-Music-Player-debug.apk
           if-no-files-found: error
           retention-days: 14

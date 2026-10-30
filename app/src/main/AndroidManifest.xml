@@ -8,7 +8,6 @@
         android:maxSdkVersion="32" />
 
     <application
-        android:supportsPictureInPicture="true"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
@@ -17,7 +16,7 @@
         android:theme="@style/Theme.OpenMediaPlayer">
         <activity
             android:name=".MainActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"\n            android:supportsPictureInPicture="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

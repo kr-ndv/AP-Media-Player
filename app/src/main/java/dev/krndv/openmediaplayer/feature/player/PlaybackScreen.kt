@@ -133,7 +133,7 @@ fun PlaybackScreen(
     var showVideoOptions by rememberSaveable { mutableStateOf(false) }
     var videoOrientation by rememberSaveable { mutableStateOf(context.getSharedPreferences("ap_video_player", android.content.Context.MODE_PRIVATE).getString("orientation", "auto") ?: "auto") }
     var playbackRate by rememberSaveable { mutableStateOf(1f) }
-    var videoAspectMode by rememberSaveable { mutableStateOf("fit") }
+    var videoAspectMode by rememberSaveable { mutableStateOf(context.getSharedPreferences("ap_video_player", android.content.Context.MODE_PRIVATE).getString("aspect_mode", "fit") ?: "fit") }
     var audioTrackOptions by remember { mutableStateOf(emptyList<LibVlcPlaybackEngine.TrackOption>()) }
     var subtitleTrackOptions by remember { mutableStateOf(emptyList<LibVlcPlaybackEngine.TrackOption>()) }
     var subtitleDelayMs by rememberSaveable { mutableStateOf(0L) }

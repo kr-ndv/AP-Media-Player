@@ -554,6 +554,9 @@ fun PlaybackScreen(
                 var dragSeekStart by remember { mutableStateOf(0L) }
                 var dragSeekDelta by remember { mutableStateOf(0f) }
                 var gestureMode by remember { mutableStateOf("") }
+                var gestureSide by remember { mutableStateOf("") }
+                var gesturePercent by remember { mutableStateOf(0.5f) }
+                LaunchedEffect(gestureSide) { if (gestureSide.isNotBlank()) { delay(900L); gestureSide = "" } }
                 val audioManager = remember(context) { context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager }
                 AndroidView(
                     modifier = Modifier
@@ -591,6 +594,12 @@ fun PlaybackScreen(
                                     point.x > size.width * 0.78f -> "volume"
                                     else -> "seek"
                                 }
+                                gestureSide = gestureMode.takeIf { it != "seek" }.orEmpty()
+                                gesturePercent = when (gestureMode) {
+                                    "brightness" -> context.findActivity()?.window?.attributes?.screenBrightness?.takeIf { it >= 0f } ?: 0.5f
+                                    "volume" -> { val maximum = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC); if (maximum > 0) audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC).toFloat() / maximum else 0f }
+                                    else -> 0.5f
+                                }
                                 showVideoControls = false
                             },
                             onDrag = { change, dragAmount ->
@@ -603,6 +612,7 @@ fun PlaybackScreen(
                                             val current = attributes.screenBrightness.takeIf { it >= 0f } ?: 0.5f
                                             attributes.screenBrightness = (current - dragAmount.y / size.height).coerceIn(0.01f, 1f)
                                             activity.window.attributes = attributes
+                                            gesturePercent = attributes.screenBrightness
                                             videoGestureFeedback = "Brightness " + (attributes.screenBrightness * 100).toInt() + "%"
                                         }
                                     }
@@ -611,9 +621,11 @@ fun PlaybackScreen(
                                         val current = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)
                                         val next = (current - (dragAmount.y / size.height * maxVolume * 2f).toInt()).coerceIn(0, maxVolume)
                                         audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, next, 0)
+                                        gesturePercent = if (maxVolume > 0) next.toFloat() / maxVolume else 0f
                                         videoGestureFeedback = "Volume " + (if (maxVolume == 0) 0 else next * 100 / maxVolume) + "%"
                                     }
                                     "seek" -> {
+                                        gestureSide = ""
                                         dragSeekDelta += dragAmount.x
                                         val target = (dragSeekStart + (dragSeekDelta / size.width * durationMs * 1.5f).toLong()).coerceIn(0L, durationMs)
                                         engine.seekTo(target)
